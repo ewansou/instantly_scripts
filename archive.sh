@@ -138,13 +138,13 @@ fi
 mkdir -p ~/Desktop/"$event_id"/{doneMP4,Hold}
 
 echo "Copying doneMP4 files..."
-cp -v ~/Desktop/doneMP4/* ~/Desktop/"$event_id"/doneMP4 2>/dev/null
+mv -v ~/Desktop/doneMP4/* ~/Desktop/"$event_id"/doneMP4 2>/dev/null
 
 echo "Copying Hold files..."
-cp -v ~/Desktop/Hold/* ~/Desktop/"$event_id"/Hold 2>/dev/null
+mv -v ~/Desktop/Hold/* ~/Desktop/"$event_id"/Hold 2>/dev/null
 
 echo "Copying original_template.psd..."
-cp -v ~/Desktop/original_template.psd ~/Desktop/"$event_id"/ 2>/dev/null
+mv -v ~/Desktop/original_template.psd ~/Desktop/"$event_id"/ 2>/dev/null
 
 echo ""
 echo "✅ Archiving complete for event: $event_id"
