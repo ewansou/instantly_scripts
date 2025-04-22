@@ -1,5 +1,7 @@
 # #!/bin/bash
 
+#ewans PB code  
+
 # #CHANGE BELOW FOR SCRIPT CONFIGURATION
 # dropboxPhotoBootNewFolder="D:/Dropbox/Operations/#thisweek/NEWRADEN/photobooth-new"
 # mainPathToArchive="C:/Users/ewans/Desktop" #Path where Display, Hold, Done, Edited, ARC are
