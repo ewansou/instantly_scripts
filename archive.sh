@@ -1,51 +1,86 @@
 #!/bin/bash
 
+# Revolve Archiving Script (With Try Again Feature)
+
 # ==== CONFIGURABLE PATHS ====
-desktop_path=~/Desktop
-source_doneMP4="$desktop_path/doneMP4"
-source_hold="$desktop_path/Hold"
-template_file="$desktop_path/original_template.psd"
+DESKTOP_PATH=~/Desktop
+DROPBOX_PATH=~/Dropbox/Operations/ForCharmaine/R360
+ARC_PATH=~/Desktop/ARC/Year2025
+SOURCE_DONE_MP4="$DESKTOP_PATH/doneMP4"
+# =============================
 
-# These will be updated after reading event ID
-event_folder=""
-event_doneMP4=""
-event_hold=""
-# ============================
-
+echo ""
 echo "Launching Revolve Archiving Script..."
 echo ""
 
-# Ask for event ID
-read -p "Enter the event ID: " event_id
+# 1. Loop until Dropbox is available
+while true; do
+  # Check Dropbox
+  if [[ ! -d "$DROPBOX_PATH" ]]; then
+    echo "⚠️ Error: Dropbox not connected. Please check connection."
+    read -p "Retry? (Y/N): " RETRY
+    if [[ ! $RETRY =~ ^[yY](es)?$ ]]; then
+      echo "Aborted."
+      exit 1
+    fi
+  else
+    break
+  fi
+done
 
-# Setup event-specific paths
-event_folder="$desktop_path/$event_id"
-event_doneMP4="$event_folder/doneMP4"
-event_hold="$event_folder/Hold"
+# 2. Get Event ID
+read -p "Enter the Event ID: " EVENT_ID
 
-# Confirmation prompt
-read -p "Continue? (Y/N): " confirm
-if [[ ! $confirm =~ ^[yY](es)?$ ]]; then
+# 3. Validate Event ID
+if [[ -z "$EVENT_ID" ]]; then
+  echo "⚠️ Error: Event ID cannot be empty."
+  exit 1
+fi
+
+# 4. Define final destinations
+DROPBOX_EVENT_PATH="$DROPBOX_PATH/$EVENT_ID"
+ARC_EVENT_PATH="$ARC_PATH/$EVENT_ID"
+
+# 5. Confirm move
+echo ""
+echo "Moving doneMP4 to: $DROPBOX_EVENT_PATH"
+echo "Moving all other files to: $ARC_EVENT_PATH"
+read -p "Proceed? (Y/N): " CONFIRM
+if [[ ! $CONFIRM =~ ^[yY](es)?$ ]]; then
   echo "Aborted."
   exit 1
 fi
 
-# Create event folders
-mkdir -p "$event_doneMP4" "$event_hold"
+# 6. Create folders
+mkdir -p "$DROPBOX_EVENT_PATH"
+mkdir -p "$ARC_EVENT_PATH"
 
-# Move files
-echo "Moving doneMP4 files..."
-mv -v "$source_doneMP4"/* "$event_doneMP4" 2>/dev/null
+# 7. Move doneMP4
+if [[ -d "$SOURCE_DONE_MP4" ]]; then
+  echo ""
+  echo "Moving 'doneMP4' to Dropbox..."
+  mv -v "$SOURCE_DONE_MP4" "$DROPBOX_EVENT_PATH"
+else
+  echo "⚠️ Warning: 'doneMP4' folder not found. Skipping."
+fi
 
-echo "Moving Hold files..."
-mv -v "$source_hold"/* "$event_hold" 2>/dev/null
-
-echo "Moving original_template.psd..."
-mv -v "$template_file" "$event_folder" 2>/dev/null
-
+# 8. Move other files
 echo ""
-echo "✅ Archiving complete for event: $event_id"
-echo "Files are stored in: $event_folder"
+echo "Moving other Desktop items to ARC..."
 
-# Pause before exit
+for item in "$DESKTOP_PATH"/*; do
+  BASENAME=$(basename "$item")
+
+  # Skip ARC folder, Dropbox shortcut, doneMP4 (already moved)
+  if [[ "$BASENAME" == "ARC" || "$BASENAME" == "Dropbox" || "$BASENAME" == "doneMP4" ]]; then
+    continue
+  fi
+
+  mv -v "$item" "$ARC_EVENT_PATH"
+done
+
+# 9. Done
+echo ""
+echo "✅ Archiving Complete for Event ID: $EVENT_ID"
+echo ""
 read -p "Press Enter to exit..."
