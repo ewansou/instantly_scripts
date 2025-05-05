@@ -1,120 +1,117 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 
-#CHANGE BELOW FOR SCRIPT CONFIGURATION
+# Photobooth Archiving Script (with logging, versioning, and DRY principles)
+
+# ==== CONFIGURATION ====
 dropboxPhotoBootNewFolder="D:/Dropbox/Operations/#thisweek/NEWRADEN/photobooth-new"
-mainPathToArchive="C:/Users/ewans/Desktop" #Path where Display, Hold, Done, Edited, ARC are
-displayFolderName="Display"
-holdFolderName="Hold"
-doneFolderName="Done"
-editedFolderName="Edited"
-arcFolderName="ARC"
+mainPathToArchive="C:/Users/ewans/Desktop"
+DATE_TAG=$(date +%d%m%Y)
 
-day=$(date +"%d")
-month=$(date +"%m")
-year=$(date +"%Y")
-date="$day""$month""$year"
+SOURCE_DISPLAY="$mainPathToArchive/Display"
+SOURCE_HOLD="$mainPathToArchive/Hold"
+SOURCE_DONE="$mainPathToArchive/Done"
+SOURCE_EDITED="$mainPathToArchive/Edited"
+SOURCE_ARC="$mainPathToArchive/ARC"
+# ========================
 
-while true
+# ==== MOVE FUNCTION ====
+move_item() {
+  local src="$1"
+  local dst="$2"
+  local name
+  name=$(basename "$src")
 
-do
-	echo "==============================="
-	echo " *** STEP 1: Please enter the eventID of your event. You can get this eventID from calendar. *** "
-	echo " ***  Once done, press ENTER *** "
-	echo "==============================="
-	read -p $'' eventId
+  if [[ ! -e "$src" ]]; then
+    echo "⚠️  '$name' not found. Skipping." | tee -a "$logFile"
+    return
+  fi
 
-	if [[ -z "$eventId" ]]; then
-		echo "==============================="
-		echo " *** You did not enter any eventID. Please try again. *** "
-		echo "==============================="
-		continue
-	else
-		echo "==============================="
-		echo " *** The eventID you've entered is ---> $eventId *** "
-		echo " *** STEP 2: Please double confirm that this eventID is correct. *** "
-		echo " *** IMPORTANT NOTE: If you've made a mistake, you may be subjected to penalty (salary deduction). *** "
-		echo " *** Type y and press ENTER if correct. Type n and press ENTER if wrong. *** "
-		echo "==============================="
-		read -p $'' confirm
+  if [[ -d "$src" && -z "$(find "$src" -maxdepth 1 -not -type d)" ]]; then
+    echo "⚠️  '$name' is empty. Skipping." | tee -a "$logFile"
+    return
+  fi
 
-		case $confirm in
-			y|Y)
-			echo "==============================="
-			echo " *** Archiving files in progress now... *** "
-			echo "==============================="
+  mkdir -p "$dst"
+  echo "📦 Moving '$name' to: $(basename "$dst")..." | tee -a "$logFile"
+  mv -v "$src" "$dst" | tee -a "$logFile"
+}
+# ========================
 
-			photoboothnewFolderName="$date"_"${eventId}"
+# ==== MAIN LOOP ====
+while true; do
+  echo "==============================="
+  echo "📅 STEP 1: Enter the Event ID (e.g., knoxx123):"
+  read -rp "" eventId
 
-			Sleep 2
-			echo "==============================="
-			echo " *** Archiving Display folder on Desktop now *** "
-			mkdir -p ${dropboxPhotoBootNewFolder}/$photoboothnewFolderName/${displayFolderName}
-			find ${mainPathToArchive}/${displayFolderName} -maxdepth 1 -not -type d -exec mv -t ${dropboxPhotoBootNewFolder}/${photoboothnewFolderName}/${displayFolderName} -- '{}' +
-			echo " *** Archiving of Display folder on Desktop completed *** "
-			echo "==============================="
+  if [[ -z "$eventId" ]]; then
+    echo "⚠️  Event ID is empty. Please try again."
+    continue
+  fi
 
-			Sleep 2
-			echo "==============================="
-			echo " *** Archiving Hold folder on Desktop now *** "
-			mkdir -p ${dropboxPhotoBootNewFolder}/$photoboothnewFolderName/${holdFolderName}
-			find ${mainPathToArchive}/${holdFolderName} -maxdepth 1 -not -type d -exec mv -t ${dropboxPhotoBootNewFolder}/${photoboothnewFolderName}/${holdFolderName} -- '{}' +
-			echo " *** Archiving of Hold folder on Desktop completed *** "
-			echo "==============================="
+  echo "You entered: $eventId"
+  echo "⚠️  Please confirm. Type 'y' to continue, 'n' to retry."
+  read -rp "" confirm
 
-			Sleep 2
-			echo "==============================="
-			echo " *** Archiving Done folder on Desktop now *** "
-			mkdir -p ${dropboxPhotoBootNewFolder}/$photoboothnewFolderName/${doneFolderName}
-			find ${mainPathToArchive}/${doneFolderName} -maxdepth 1 -not -type d -exec mv -t ${dropboxPhotoBootNewFolder}/${photoboothnewFolderName}/${doneFolderName} -- '{}' +
-			echo " *** Archiving of Done folder on Desktop completed *** "
-			echo "==============================="
+  case "$confirm" in
+    y|Y)
+      echo "==============================="
+      echo "🚀 Archiving files in progress..."
+      echo "==============================="
 
-			Sleep 2
-			echo "==============================="
-			echo " *** Archiving Edited folder on Desktop now *** "
-			mkdir -p ${dropboxPhotoBootNewFolder}/$photoboothnewFolderName/${editedFolderName}
-			find ${mainPathToArchive}/${editedFolderName} -maxdepth 1 -not -type d -exec mv -t ${dropboxPhotoBootNewFolder}/${photoboothnewFolderName}/${editedFolderName} -- '{}' +
-			echo " *** Archiving of Edited folder on Desktop completed *** "
-			echo "==============================="
+      eventFolderName="${DATE_TAG}_${eventId}"
+      targetPath="$dropboxPhotoBootNewFolder/$eventFolderName"
 
-			Sleep 2
-			echo "==============================="
-			echo " *** Archiving ARC folder on Desktop now *** "
-			mkdir -p ${dropboxPhotoBootNewFolder}/$photoboothnewFolderName/${arcFolderName}
-			find ${mainPathToArchive}/${arcFolderName} -maxdepth 1 -not -type d -exec mv -t ${dropboxPhotoBootNewFolder}/${photoboothnewFolderName}/${arcFolderName} -- '{}' +
-			echo " *** Archiving of ARC folder on Desktop completed *** "
-			echo "==============================="
+      # Versioning logic
+      if [[ -d "$targetPath" ]]; then
+        suffix="_updated"
+        attempt=1
+        while [[ -d "${targetPath}${suffix}" ]]; do
+          attempt=$((attempt + 1))
+          suffix="_updated_v$attempt"
+        done
+        targetPath="${targetPath}${suffix}"
+        eventFolderName="${eventFolderName}${suffix}"
+        echo "📁 Using new versioned folder: $eventFolderName"
+      fi
 
-			echo "==============================="
-			echo " *** Archiving completed *** "
-			echo " *** IMPORTANT NOTE: If you think you've made a mistake (for eg., entered the wrong eventID), please update us accordingly. *** "
-			echo " *** IMPORTANT NOTE: Please ensure Dropbox completely syncs finish before you off this computer. You can observe the Dropbox icon on the bottom right. *** "
-			echo " *** Script will exit in 5 seconds *** "
-			Sleep 1
-			echo " *** In 5... *** "
-			Sleep 1
-			echo " *** In 4... *** "
-			Sleep 1
-			echo " *** In 3... *** "
-			Sleep 1
-			echo " *** In 2... *** "
-			Sleep 1
-			echo " *** In 1... *** "
-			Sleep 1
-			exit
-			;;
+      mkdir -p "$targetPath"
+      logFile="$targetPath/archive_log.txt"
 
-			n|N)
-			echo "==============================="
-			echo " *** Please enter eventID again *** "
-			echo "==============================="
-			continue
-			;;
-			*)
-			echo "==============================="
-			echo " *** Please enter either y or n *** "
-			echo "==============================="
-			;;
-		esac
-	fi
+      {
+        echo "====== Instantly.sg Photobooth Archive Log ======"
+        echo "Event ID: $eventId"
+        echo "Date: $(date '+%Y-%m-%d %H:%M:%S')"
+        echo "Archived To: $targetPath"
+        echo ""
+        echo "Files moved:"
+      } > "$logFile"
+
+      # === MOVE FOLDERS ===
+      echo ""
+      move_item "$SOURCE_DISPLAY" "$targetPath/Display"
+      move_item "$SOURCE_HOLD" "$targetPath/Hold"
+      move_item "$SOURCE_DONE" "$targetPath/Done"
+      move_item "$SOURCE_EDITED" "$targetPath/Edited"
+      move_item "$SOURCE_ARC" "$targetPath/ARC"
+
+      echo ""
+      echo "✅ Archiving Complete: $eventId"
+      echo "📝 Log saved to: $logFile"
+      echo "📌 Ensure Dropbox finishes syncing before shutdown."
+      echo "==============================="
+
+      for i in 5 4 3 2 1; do
+        echo "⏳ Exiting in $i..."
+        sleep 1
+      done
+
+      exit 0
+      ;;
+    n|N)
+      echo "🔁 Let's try again."
+      ;;
+    *)
+      echo "❌ Invalid input. Please enter 'y' or 'n'."
+      ;;
+  esac
 done
