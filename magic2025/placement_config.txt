@@ -1,0 +1,33 @@
+# === placement_config.txt ===
+# IMPORTANT:
+# 1. DO NOT add spaces around the equal sign (e.g., use WIDTH1=700, not WIDTH1 = 700)
+# 2. DO NOT include any comments — this file is not comment-safe
+# 3. Ensure PLACEMENT_COUNT matches the number of placement blocks
+# 4. Each placement must have: WIDTHn, HEIGHTn, Xn, Yn (where n = 1, 2, ..., PLACEMENT_COUNT)
+# 5. This file is read as plain key=value pairs
+
+PLACEMENT_COUNT=4
+
+WIDTH1=499
+HEIGHT1=333
+X1=85
+Y1=79
+
+WIDTH2=734
+HEIGHT2=490
+X2=85
+Y2=454
+
+WIDTH3=579
+HEIGHT3=386
+X3=984
+Y3=167
+
+WIDTH4=864
+HEIGHT4=576
+X4=872
+Y4=620
+
+ENABLE_MOVE_TO_DISPLAY=true
+DISPLAY_FOLDER=./Display
+DISPLAY_DELAY_SECONDS=2
