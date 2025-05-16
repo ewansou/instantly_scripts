@@ -10,7 +10,7 @@ SRC_DIR="$HOME/Desktop/Source"
 DEST_DIR="$HOME/Desktop/Moved"
 FUZZ="50%"               # Tolerance for near-white pixels
 
-#ewan === DEFAULT CROP VALUES ===
+# === DEFAULT CROP VALUES ===
 DEFAULT_TOP="18"         # Pixels to remove from the top edge
 DEFAULT_LEFT="20"        # Pixels to remove from the left side
 DEFAULT_RIGHT="20"       # Pixels to remove from the right side
