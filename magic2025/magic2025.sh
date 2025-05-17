@@ -4,8 +4,8 @@
 INPUT_FOLDER="./Source"
 OUTPUT_FOLDER="./Output"
 MOVED_FOLDER="./Moved"
-BACKGROUND="./background.jpg"
-OVERLAY="./overlay.png"
+BACKGROUND="./background.jpg" # make sure is saved in RGB mode
+OVERLAY="./overlay.png" # make sure is saved in RGB mode
 CHECK_INTERVAL_SECONDS=3
 CONFIG_FILE="./placement_config.txt"
 
