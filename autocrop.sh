@@ -1,77 +1,71 @@
 #!/bin/bash
 # watch_autocrop.sh
 # Place this script inside a folder named 'process2025'.
-# It will create and monitor 'Source', 'Moved', and 'Hold' subfolders within that directory,
-# auto-cropping new JPEG/JPG files as they arrive.
+# It creates and monitors 'Source', 'Moved', and 'Hold' subfolders,
+# crops new JPEG/JPG files as they arrive, then moves originals to 'Hold'.
+# Type 'exit' at the prompt to end.
 
-# === DETERMINE BASE DIRECTORY ===
+# === BASE DIRECTORY ===
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASE_DIR="$SCRIPT_DIR"
 
-# === CONFIGURABLE PATHS ===
+# === PATHS & SETTINGS ===
 SRC_DIR="$BASE_DIR/Source"
-DEST_DIR="$BASE_DIR/Moved"
-HOLD_DIR="$BASE_DIR/Hold"
-FUZZ="50%"               # Tolerance for near-white pixels
+DEST_DIR="$BASE_DIR/Output"
+MOVED_DIR="$BASE_DIR/Moved"
+WIDTH=1800            
+HEIGHT=1200            
+X=22    
+Y=20       
+POLL_INTERVAL=3            
 
-# === DEFAULT CROP VALUES ===
-DEFAULT_TOP="18"         # Pixels to remove from the top edge
-DEFAULT_LEFT="20"        # Pixels to remove from the left side
-DEFAULT_RIGHT="20"       # Pixels to remove from the right side
-POLL_INTERVAL="3"        # Seconds between directory scans
+# === INIT ===
+echo "Initializing under: $BASE_DIR"
+mkdir -p "$SRC_DIR" "$DEST_DIR" "$MOVED_DIR"
 
-# === IMAGE MAGICK ARGUMENTS ===
-# Define the crop and chop options in a single variable
-IM_ARGS=(
-  -auto-orient
-  -background white -alpha remove -alpha off
-  -fuzz "$FUZZ"
-  -trim +repage
-  -gravity North -chop 0x${DEFAULT_TOP}
-  -gravity West  -chop ${DEFAULT_LEFT}x0
-  -gravity East  -chop ${DEFAULT_RIGHT}x0
-)
-
-# === INITIALIZE FOLDERS ===
-echo "Initializing directories in: $BASE_DIR"
-mkdir -p "$SRC_DIR" "$DEST_DIR" "$HOLD_DIR"
-
-# === STOPPER SETUP ===
-echo "Press ENTER at any time to stop the watcher."
-read -r _STOP_SIGNAL &
-STOP_PID=$!
-
-# === FUNCTION: PROCESS SINGLE IMAGE ===
+# === PROCESS IMAGE ===
 process_image() {
-  local input_file="$1"
-  local filename="$(basename "$input_file")"
-  local output_file="$DEST_DIR/$filename"
+  local input_fileWfullfilepath="$1"
+  local input_filename="$(basename "$input_fileWfullfilepath")"
+  local output_file="$DEST_DIR/$input_filename"
 
-  echo "🔧 Processing '$filename'..."
-  # Use the parameterized ImageMagick options
-  magick "$input_file" "${IM_ARGS[@]}" "$output_file"
+#echo "*********"
+#echo "${input_fileWfullfilepath}"
+#echo "*********"
+#echo "${input_filename}"
+#echo "*********"
+#echo "${output_file}"
+#echo "*********"
 
+  echo "🔧 Processing $in"
+  magick "${input_fileWfullfilepath}" -crop ${WIDTH}x${HEIGHT}+${X}+${Y} "${output_file}"
   if [[ $? -eq 0 ]]; then
-    echo "✔ Saved: $output_file"
+    #echo "✔ Saved: $out"
+    mv "${input_fileWfullfilepath}" "$MOVED_DIR"
+    #echo "🔀 Moved original to Hold"
   else
-    echo "❌ Failed: $filename"
+    echo "❌ Failed: $base"
   fi
 }
 
-# === WATCH LOOP (POLLING) ===
+# === WATCH LOOP ===
 shopt -s nullglob
-while kill -0 "$STOP_PID" 2>/dev/null; do
-  for input_file in "$SRC_DIR"/*.{jpg,jpeg,JPG,JPEG}; do
-    [[ -f "$input_file" ]] || continue
-    filename="$(basename "$input_file")"
-    [[ -f "$DEST_DIR/$filename" ]] && continue
-    process_image "$input_file"
+echo "Watching $SRC_DIR (poll every $POLL_INTERVAL s)"
+while true; do
+  for f in "$SRC_DIR"/*.{jpg,jpeg,JPG,JPEG}; do
+    [[ -f "$f" ]] || continue
+    base="$(basename "$f")"
+    [[ -f "$DEST_DIR/$base" ]] && continue
+    process_image "$f"
   done
-  sleep "$POLL_INTERVAL"
+
+  printf "\nType 'exit' to quit; otherwise the watcher will continue after %s seconds...\n" "$POLL_INTERVAL"
+  read -t "$POLL_INTERVAL" cmd
+  if [[ "$cmd" == "exit" ]]; then
+    echo "Exiting watcher..."
+    break
+  fi
 done
 shopt -u nullglob
 
-# === CLEAN UP AND EXIT ===
-kill "$STOP_PID" 2>/dev/null
-echo "Watcher stopped by user."
-read -p "Press ENTER to exit..."
+echo "Cleanup done. Goodbye."
