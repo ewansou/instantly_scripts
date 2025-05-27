@@ -10,13 +10,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASE_DIR="$SCRIPT_DIR"
 
 # === PATHS & SETTINGS ===
-SRC_DIR="$BASE_DIR/Source"
+SRC_DIR="$BASE_DIR/tempDisplay"
 DEST_DIR="$BASE_DIR/Output"
 MOVED_DIR="$BASE_DIR/Moved"
-WIDTH=1800            
-HEIGHT=1200            
-X=22    
-Y=20       
+WIDTH=600            
+HEIGHT=900
+X=20
+Y=921
 POLL_INTERVAL=3            
 
 # === INIT ===
@@ -29,6 +29,8 @@ process_image() {
   local input_filename="$(basename "$input_fileWfullfilepath")"
   local output_file="$DEST_DIR/$input_filename"
 
+
+#for error checking----
 #echo "*********"
 #echo "${input_fileWfullfilepath}"
 #echo "*********"
