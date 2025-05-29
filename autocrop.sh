@@ -17,7 +17,7 @@ WIDTH=600
 HEIGHT=900
 X=20
 Y=921
-POLL_INTERVAL=3            
+POLL_INTERVAL=5            
 
 # === INIT ===
 echo "Initializing under: $BASE_DIR"
