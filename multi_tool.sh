@@ -81,7 +81,7 @@ another_tool() {
 show_menu() {
   echo "---------------------------------"
   echo "   Choose a tool to run:"
-  echo "     1) Crop video"
+  echo "     1) Crop image"
   echo "     2) Add music to video"
   echo "     3) Another tool (placeholder)"
   echo "     0) Exit"
