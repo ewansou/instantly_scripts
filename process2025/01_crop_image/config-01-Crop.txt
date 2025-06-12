@@ -1,0 +1,4 @@
+WIDTH=56
+HEIGHT=89
+COMMAND=magick "$input_file" -crop "${WIDTH}x${HEIGHT}+${X}+${Y}" "$output_file" 
+

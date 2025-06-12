@@ -69,19 +69,20 @@ main_menu() {
 #               and moves originals to Moved/.  Crops to WIDTHxHEIGHT at +X+Y.
 crop_image() {
   # === BASE DIRECTORY ===
+  source "config-01-Crop.txt"
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   BASE_DIR="$SCRIPT_DIR"
 
   # === PATHS & SETTINGS ===
-  SRC_DIR="$BASE_DIR/tempDisplay"
-  DEST_DIR="$BASE_DIR/Output"
-  MOVED_DIR="$BASE_DIR/Moved"
+  SRC_DIR="$BASE_DIR/01_crop_image/tempDisplay"
+  DEST_DIR="$BASE_DIR/01_crop_image/Output"
+  MOVED_DIR="$BASE_DIR/01_crop_image/Moved"
 
-  # Hard‐coded crop parameters (will change to config file soon)
-  WIDTH=600
-  HEIGHT=900
-  X=20
-  Y=921
+  # Hard‐coded crop parameters (i want to try if can set default.)
+  #WIDTH=600
+  #HEIGHT=900
+  #X=20
+  #Y=921
 
 # Checks every 5 seconds
   POLL_INTERVAL=5
