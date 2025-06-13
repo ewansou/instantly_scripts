@@ -141,13 +141,14 @@ add_music_to_video() {
   source "config-02-addmusic.txt"
 
   # === PATHS & SETTINGS ===
-  SRC_DIR="$BASE_DIR/02_gif_music/tempDisplay"
-  DEST_DIR="$BASE_DIR/02_gif_music/Output"
+  INPUT_VIDEO="$BASE_DIR/02_gif_music/tempDisplay/input.mp4"
+  OUTPUT_DIR="$BASE_DIR/02_gif_music/Output"
   MOVED_DIR="$BASE_DIR/02_gif_music/Moved"
+  MUSIC_FILE="$BASE_DIR/02_gif_music/bg_music/background_music.mp3"
 
   # === INIT: create folders if they don’t exist ===
   echo "Initializing image-crop watcher under: $BASE_DIR"
-  mkdir -p "$SRC_DIR" "$DEST_DIR" "$MOVED_DIR"
+  mkdir -p "$INPUT_VIDEO" "$OUTPUT_DIR" "$MOVED_DIR"
 
   # Make sure these variables were set in config.txt:
   #   INPUT_VIDEO, MUSIC_FILE, OUTPUT_DIR
@@ -171,6 +172,10 @@ add_music_to_video() {
     echo "   [Error] ffmpeg failed to add music."
     return 1
   fi
+
+  # === MOVE ORIGINAL VIDEO TO MOVED ===
+  echo "🔀 Moving original to: $MOVED_DIR"
+  mv "$INPUT_VIDEO" "$MOVED_DIR"
 
   echo "   (Music added — output in ${OUTPUT_DIR}/with_music_$(basename "$INPUT_VIDEO"))"
 }

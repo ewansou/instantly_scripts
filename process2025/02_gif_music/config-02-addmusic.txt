@@ -1,3 +1,13 @@
-MUSIC_FILE=C:\Users\Kiran Ng\instantly_scripts\process2025\02_gif_music\bg_music
-INPUT_VIDEO=C:\Users\Kiran Ng\instantly_scripts\process2025\02_gif_music\tempDisplay
-OUTPUT_DIR=C:\Users\Kiran Ng\instantly_scripts\process2025\02_gif_music\Output
+# config-02-addmusic.txt
+
+# The single video file you want to process:
+INPUT_VIDEO="./02_gif_music/tempDisplay/input.mp4"
+
+# Where to write the new video+music file:
+OUTPUT_DIR="./02_gif_music/Output"
+
+# Where to archive the original video after processing:
+MOVED_DIR="./02_gif_music/Moved"
+
+# The music track to overlay (include extension):
+MUSIC_FILE="./02_gif_music/bg_music/background_music.mp3"
