@@ -1,0 +1,3 @@
+MUSIC_FILE=C:\Users\Kiran Ng\instantly_scripts\process2025\02_gif_music\bg_music
+INPUT_VIDEO=C:\Users\Kiran Ng\instantly_scripts\process2025\02_gif_music\tempDisplay
+OUTPUT_DIR=C:\Users\Kiran Ng\instantly_scripts\process2025\02_gif_music\Output

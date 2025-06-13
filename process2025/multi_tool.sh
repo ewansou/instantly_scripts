@@ -108,7 +108,8 @@ crop_image() {
     fi
   }
 
-  # === WATCH LOOP: poll for new .jpg/.jpeg files every POLL_INTERVAL seconds ===
+  # === WATCH LOOP: poll for new .jpg/.jpeg files every POLL_INTERVAL seconds === 
+  #extract out 
   shopt -s nullglob
   echo "Watching '$SRC_DIR' for new JPG/JPEG files (poll every $POLL_INTERVAL s)..."
   while true; do
@@ -133,6 +134,21 @@ crop_image() {
 
 # 3.2) add_music_to_video: merges INPUT_VIDEO + MUSIC_FILE into a new file in OUTPUT_DIR
 add_music_to_video() {
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  BASE_DIR="$SCRIPT_DIR"
+
+  # load config file
+  source "config-02-addmusic.txt"
+
+  # === PATHS & SETTINGS ===
+  SRC_DIR="$BASE_DIR/02_gif_music/tempDisplay"
+  DEST_DIR="$BASE_DIR/02_gif_music/Output"
+  MOVED_DIR="$BASE_DIR/02_gif_music/Moved"
+
+  # === INIT: create folders if they don’t exist ===
+  echo "Initializing image-crop watcher under: $BASE_DIR"
+  mkdir -p "$SRC_DIR" "$DEST_DIR" "$MOVED_DIR"
+
   # Make sure these variables were set in config.txt:
   #   INPUT_VIDEO, MUSIC_FILE, OUTPUT_DIR
   if [[ -z "$INPUT_VIDEO" || -z "$MUSIC_FILE" || -z "$OUTPUT_DIR" ]]; then
