@@ -1,6 +1,25 @@
-WIDTH=56
-HEIGHT=89
-X=20
-Y=921
-COMMAND=magick "$input_file" -crop "${WIDTH}x${HEIGHT}+${X}+${Y}" "$output_file" 
+#WIDTH=56
+#HEIGHT=89
+#X=20
+#Y=921
+#COMMAND=magick "$input_file" -crop "${WIDTH}x${HEIGHT}+${X}+${Y}" "$output_file" 
 
+# === Config for Image Processing Tool ===
+
+# Directories (relative to the script's location)
+SRC_DIR="01_crop_image/tempDisplay"
+DEST_DIR="01_crop_image/Output"
+MOVED_DIR="01_crop_image/Moved"
+
+# Watcher polling interval in seconds
+POLL_INTERVAL=5
+
+# --- ImageMagick Operations ---
+# Place all your command-line options for the 'magick' command here.
+# Do NOT include the 'magick' command itself, or the input/output files.
+# This string defines WHAT will be done to the image.
+IMAGICK_ARGS="-gravity center -resize 1200x1200^ -crop 1080x1080+0+0 +repage"
+
+# --- Example of other possibilities ---
+# IMAGICK_ARGS="-resize 50% -monochrome"
+# IMAGICK_ARGS="-bordercolor '#ff0000' -border 20x20"
