@@ -40,7 +40,8 @@ main_menu() {
 
     case "$CHOICE" in
       1)
-        crop_image
+        SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+        bash "$SCRIPT_DIR/01_crop_image/script.sh"
         ;;
       2)
         add_music_to_video
@@ -67,16 +68,16 @@ main_menu() {
 
 # 3.1) crop_image: in‐script watcher that crops any new JPG/JPEG in tempDisplay/
 #               and moves originals to Moved/.  Crops to WIDTHxHEIGHT at +X+Y.
-crop_image() {
+#crop_image() {
   # === BASE DIRECTORY ===
-  source "config-01-Crop.txt"
-  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  BASE_DIR="$SCRIPT_DIR"
+#  source "config-01-Crop.txt"
+#  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+#  BASE_DIR="$SCRIPT_DIR"
 
   # === PATHS & SETTINGS ===
-  SRC_DIR="$BASE_DIR/01_crop_image/tempDisplay"
-  DEST_DIR="$BASE_DIR/01_crop_image/Output"
-  MOVED_DIR="$BASE_DIR/01_crop_image/Moved"
+#  SRC_DIR="$BASE_DIR/01_crop_image/tempDisplay"
+#  DEST_DIR="$BASE_DIR/01_crop_image/Output"
+#  MOVED_DIR="$BASE_DIR/01_crop_image/Moved"
 
   # Hard‐coded crop parameters (i want to try if can set default.)
   #WIDTH=600
