@@ -1,19 +1,16 @@
 #!/bin/bash
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-#echo "SCRIPT_DIR"
+#echo "$SCRIPT_DIR"
 PARENT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-source "$PARENT_DIR/watch_helper.sh"
+source "$PARENT_DIR/watcher.sh"
 
 
 #function below
 crop_image() {
   # === BASE DIRECTORY ===
-  source "config-01-Crop.txt"
+  source "$SCRIPT_DIR/config-01-Crop.txt"
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  BASE_DIR="$SCRIPT_DIR"
-
-
 
   # === PATHS & SETTINGS ===
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -22,12 +19,9 @@ crop_image() {
     DEST_DIR="$BASE_DIR/01_crop_image/Output"
     MOVED_DIR="$BASE_DIR/01_crop_image/Moved"
     POLL_INTERVAL=5
-
-watch_for_new_images "$SRC_DIR" "$DEST_DIR" "$POLL_INTERVAL" process_image "jpg,jpeg"
-
-  #}
-
 #show the config file settings
+
+# === DEBUG CHECKPOINT 1: VERIFY THE PATH ===
   echo "Width: $WIDTH"
   echo "Height: $HEIGHT"
   echo "X: $X"
@@ -35,6 +29,8 @@ watch_for_new_images "$SRC_DIR" "$DEST_DIR" "$POLL_INTERVAL" process_image "jpg,
   echo "Command: $COMMAND"
   echo "Poll Interval: $POLL_INTERVAL" 
 
+  #watch_for_new_images "$SRC_DIR" "$DEST_DIR" "$POLL_INTERVAL" process "jpg,jpeg"
+  #echo "$SRC_DIR"
 
     process() {
     local input_file="$1"
@@ -58,6 +54,7 @@ watch_for_new_images "$SRC_DIR" "$DEST_DIR" "$POLL_INTERVAL" process_image "jpg,
   }
 
   watch_for_new_images "$SRC_DIR" "$DEST_DIR" "$POLL_INTERVAL" process "jpg,jpeg,JPG,JPEG"
+
 }
 
 crop_image
