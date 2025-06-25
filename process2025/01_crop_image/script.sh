@@ -13,11 +13,10 @@ crop_image() {
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
   # === PATHS & SETTINGS ===
-    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     BASE_DIR="$SCRIPT_DIR"
-    SRC_DIR="$BASE_DIR/01_crop_image/tempDisplay"
-    DEST_DIR="$BASE_DIR/01_crop_image/Output"
-    MOVED_DIR="$BASE_DIR/01_crop_image/Moved"
+    SRC_DIR="$BASE_DIR/tempDisplay"
+    DEST_DIR="$BASE_DIR/Output"
+    MOVED_DIR="$BASE_DIR/Moved"
     POLL_INTERVAL=5
 #show the config file settings
 
