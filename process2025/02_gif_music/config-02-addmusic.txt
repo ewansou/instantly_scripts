@@ -11,3 +11,6 @@ MOVED_DIR="./02_gif_music/Moved"
 
 # The music track to overlay (include extension):
 MUSIC_FILE="./02_gif_music/bg_music/background_music.mp3"
+
+
+COMMAND='ffmpeg -i "$INPUT_VIDEO" \-i "$MUSIC_FILE" \-c:v copy -c:a aac \-map 0:v:0 -map 1:a:0 \"${OUTPUT_DIR}/with_music_$(basename "$INPUT_VIDEO")"'

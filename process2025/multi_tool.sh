@@ -45,6 +45,8 @@ main_menu() {
         ;;
       2)
         add_music_to_video
+        SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+        bash "$SCRIPT_DIR/02_gif_music/script.sh"
         ;;
       3)
         another_tool
@@ -65,73 +67,6 @@ main_menu() {
 ##############################
 # 3) FUNCTION DEFINITIONS (ALL TOOLS BELOW)
 ##############################
-
-# 3.1) crop_image: in‐script watcher that crops any new JPG/JPEG in tempDisplay/
-#               and moves originals to Moved/.  Crops to WIDTHxHEIGHT at +X+Y.
-#crop_image() {
-  # === BASE DIRECTORY ===
-#  source "config-01-Crop.txt"
-#  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-#  BASE_DIR="$SCRIPT_DIR"
-
-  # === PATHS & SETTINGS ===
-#  SRC_DIR="$BASE_DIR/01_crop_image/tempDisplay"
-#  DEST_DIR="$BASE_DIR/01_crop_image/Output"
-#  MOVED_DIR="$BASE_DIR/01_crop_image/Moved"
-
-  # Hard‐coded crop parameters (i want to try if can set default.)
-  #WIDTH=600
-  #HEIGHT=900
-  #X=20
-  #Y=921
-
-# Checks every 5 seconds
-  #POLL_INTERVAL=5
-
-  # === INIT: create folders if they don’t exist ===
-  #echo "Initializing image-crop watcher under: $BASE_DIR"
-  #mkdir -p "$SRC_DIR" "$DEST_DIR" "$MOVED_DIR"
-
-  # === process_image: given one file path, crop it and move original ===
-  #process_image() {
-   # local input_file="$1"
-    #local filename="$(basename "$input_file")"
-    #local output_file="$DEST_DIR/$filename"
-
-#    echo "🔧 Processing '$filename'..."
-  #  magick "$input_file" -crop "${WIDTH}x${HEIGHT}+${X}+${Y}" "$output_file"
-  #  if [[ $? -eq 0 ]]; then
-  #    mv "$input_file" "$MOVED_DIR"
-  #    echo "✔ Saved: $output_file"
-  #    echo "🔀 Moved original to $MOVED_DIR"
-  #  else
-  #    echo "❌ Failed to crop: $filename"
-  #  fi
-  #}
-
-  # === WATCH LOOP: poll for new .jpg/.jpeg files every POLL_INTERVAL seconds === 
-  #extract out 
-  #shopt -s nullglob
-  #echo "Watching '$SRC_DIR' for new JPG/JPEG files (poll every $POLL_INTERVAL s)..."
-  #while true; do
-  #  for f in "$SRC_DIR"/*.{jpg,jpeg,JPG,JPEG}; do
-  #    [[ -f "$f" ]] || continue
-  #    base="$(basename "$f")"
-  #    [[ -f "$DEST_DIR/$base" ]] && continue
-  #    process_image "$f"
-  #  done
-
-    #printf "\nType 'exit' to quit; otherwise the watcher continues after %s seconds...\n" "$POLL_INTERVAL"
-    #read -t "$POLL_INTERVAL" cmd
-    #if [[ "$cmd" == "exit" ]]; then
-    #  echo "Exiting image‐crop watcher..."
-    #  break
-    #fi
-  #done
-  #shopt -u nullglob
-
- # echo "Cleanup done. Returning to menu."
-#}
 
 # 3.2) add_music_to_video: merges INPUT_VIDEO + MUSIC_FILE into a new file in OUTPUT_DIR
 #add_music_to_video() {
