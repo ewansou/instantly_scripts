@@ -1,16 +1,17 @@
-# config-02-addmusic.txt
+# === Config for Add Music Tool ===
 
-# The single video file you want to process:
-INPUT_VIDEO="./02_gif_music/tempDisplay/input.mp4"
+# Paths are relative to the PARENT directory (the main project folder)
+SRC_DIR="02_gif_music/tempDisplay"
+OUTPUT_DIR="02_gif_music/Output"
+MOVED_DIR="02_gif_music/Moved"
+MUSIC_FILE="02_gif_music/bg_music/background_music.mp3"
 
-# Where to write the new video+music file:
-OUTPUT_DIR="./02_gif_music/Output"
+POLL_INTERVAL=10
 
-# Where to archive the original video after processing:
-MOVED_DIR="./02_gif_music/Moved"
-
-# The music track to overlay (include extension):
-MUSIC_FILE="./02_gif_music/bg_music/background_music.mp3"
-
-
-COMMAND='ffmpeg -i "$INPUT_VIDEO" \-i "$MUSIC_FILE" \-c:v copy -c:a aac \-map 0:v:0 -map 1:a:0 \"${OUTPUT_DIR}/with_music_$(basename "$INPUT_VIDEO")"'
+# --- FFMPEG ARGUMENTS ---
+# This is the safe way. Only include the options, not the full command.
+# -c:v copy         -> Copy the video stream without re-encoding (fast)
+# -c:a aac          -> Encode the new audio to AAC (good quality)
+# -map 0:v:0        -> Take the video from the 1st input (the video file)
+# -map 1:a:0        -> Take the audio from the 2nd input (the music file)
+FFMPEG_ARGS="-c:v copy -c:a aac -map 0:v:0 -map 1:a:0"

@@ -44,7 +44,6 @@ main_menu() {
         bash "$SCRIPT_DIR/01_crop_image/script.sh"
         ;;
       2)
-        add_music_to_video
         SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
         bash "$SCRIPT_DIR/02_gif_music/script.sh"
         ;;

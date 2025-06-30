@@ -1,65 +1,70 @@
 #!/bin/bash
 
+# --- SETUP AND LOAD CONFIG ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARENT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Source the helper and the config file
 source "$PARENT_DIR/watcher.sh"
+if [[ ! -f "$SCRIPT_DIR/config-02-addmusic.txt" ]]; then
+    echo "❌ ERROR: config-02-addmusic.txt not found in $SCRIPT_DIR"
+    exit 1
+fi
+source "$SCRIPT_DIR/config-02-addmusic.txt"
 
+# This function contains the main logic
 add_music() {
-  # === BASE DIRECTORY ===
-  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  source "$SCRIPT_DIR/config-02-addmusic.txt"
+    # --- VALIDATE AND DEBUG ---
+    echo "--- Settings Loaded from Config ---"
+    echo "  Source Directory: $SRC_DIR"
+    echo "  Output Directory: $OUTPUT_DIR"
+    echo "  Moved Directory:  $MOVED_DIR"
+    echo "  Music File:       $MUSIC_FILE"
+    echo "-----------------------------------"
 
-# === PATHS & SETTINGS ===
-    BASE_DIR="$SCRIPT_DIR"
-    SRC_DIR="$BASE_DIR/tempDisplay"
-    INPUT_VIDEO="$BASE_DIR/tempDisplay/input.mp4"
-    OUTPUT_DIR="$BASE_DIR/Output"
-    MOVED_DIR="$BASE_DIR/Moved"
-    MUSIC_FILE="$BASE_DIR/bg_music/background_music.mp3"
-    POLL_INTERVAL=20
-      # === PATHS & SETTINGS ===
-#  INPUT_VIDEO="$BASE_DIR/02_gif_music/tempDisplay/input.mp4"
- # OUTPUT_DIR="$BASE_DIR/02_gif_music/Output"
-  #MOVED_DIR="$BASE_DIR/02_gif_music/Moved"
-  #MUSIC_FILE="$BASE_DIR/02_gif_music/bg_music/background_music.mp3"
-  #Display what is in the config file
+    # Construct the FULL paths for all operations
+    local FULL_SRC_DIR="$PARENT_DIR/$SRC_DIR"
+    local FULL_OUTPUT_DIR="$PARENT_DIR/$OUTPUT_DIR"
+    local FULL_MOVED_DIR="$PARENT_DIR/$MOVED_DIR"
+    local FULL_MUSIC_FILE="$PARENT_DIR/$MUSIC_FILE"
 
+    # Create the necessary directories
+    mkdir -p "$FULL_SRC_DIR" "$FULL_OUTPUT_DIR" "$FULL_MOVED_DIR"
 
-  echo "Input Video: $INPUT_VIDEO"
-  echo " ======================================= ======================================="
-  echo "Output Location: $OUTPUT_DIR"
-  echo " ======================================= ======================================="
-  echo "Original Video: $MOVED_DIR"
-  echo " ======================================= ======================================="
-  echo "Music Used: $MUSIC_FILE"
-  echo " ======================================= ======================================="
+    # --- DEFINE THE PROCESSOR FUNCTION ---
+    process_video() {
+        local input_file="$1"
+        local filename
+        filename="$(basename "$input_file")"
+        local output_file="$FULL_OUTPUT_DIR/$filename"
 
-  echo "Initializing folders under: $SCRIPT_DIR"
-  mkdir -p "$SRC_DIR" "$DEST_DIR" "$MOVED_DIR"
+        # This is the safe way to handle command arguments from a config file
+        local -a args_array
+        read -r -a args_array <<< "$FFMPEG_ARGS"
 
-  process() {
-    local input_file="$1"
-    local filename="$(basename "$input_file")"
-    local output_file="$DEST_DIR/$filename"
+        echo "🎵 Processing '$filename'..."
 
-    echo "🔧 Processing '$filename'..."
+        # Execute the command safely, without eval, can remove "-loglevel error" to see the version banner, configuration details, stream mapping, and the live progress bar
+        ffmpeg -y -loglevel error -i "$input_file" -i "$FULL_MUSIC_FILE" \ 
+               "${args_array[@]}" \
+               "$output_file"
 
-    local final_command=$(eval echo "$COMMAND")
-    echo "🧪 Final command: $final_command"
+        if [[ $? -eq 0 ]]; then
+            echo "✔ Success! Saved to $output_file"
+            mv "$input_file" "$FULL_MOVED_DIR"
+        else
+            echo "❌ Failed to process: $filename"
+        fi
+    }
 
-    eval "$COMMAND"
-
-    if [[ $? -eq 0 ]]; then
-      mv "$input_file" "$MOVED_DIR"
-      echo "✔ Saved: $output_file"
-      echo "🔀 Moved original to $MOVED_DIR"
-    else
-      echo "❌ Failed to add music to: $filename"
-    fi
-  }
-
-  watch_for_new_images "$SRC_DIR" "$DEST_DIR" "$POLL_INTERVAL" process "mp4,Mp4,MP4"
- 
+    # --- START THE WATCHER ---
+    watch_for_new_images \
+        "$FULL_SRC_DIR" \
+        "$FULL_OUTPUT_DIR" \
+        "$POLL_INTERVAL" \
+        "process_video" \
+        "mp4,MP4,mov,mkv,avi"
 }
 
+# --- RUN THE SCRIPT ---
 add_music
