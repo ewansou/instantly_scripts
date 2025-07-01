@@ -26,7 +26,7 @@ show_menu() {
   echo "   Choose a tool to run:"
   echo "     1) Crop image "
   echo "     2) Add music to video"
-  echo "     3) Another tool (placeholder)"
+  echo "     3) Rotate Image"
   echo "     0) Exit"
   echo "---------------------------------"
   echo -n "Enter your choice [0-3]: "
@@ -48,7 +48,8 @@ main_menu() {
         bash "$SCRIPT_DIR/02_gif_music/script.sh"
         ;;
       3)
-        another_tool
+        SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+        bash "$SCRIPT_DIR/03_rotate_image/script.sh"
         ;;
       0)
         echo "Exiting. Goodbye!"
