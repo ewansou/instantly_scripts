@@ -39,16 +39,22 @@ EOF
         echo -n "  Enter your choice [0-3]: "
         read -r ROTATION_CHOICE
 
+        # DEBUG: Show what value was read from the user's input
+        echo "DEBUG: User entered: '$ROTATION_CHOICE'"
+
         case "$ROTATION_CHOICE" in
         1)
+            echo "DEBUG: Matched choice 1."
             ROTATION_ANGLE="90"
             break
             ;;
         2)
+            echo "DEBUG: Matched choice 2."
             ROTATION_ANGLE="-90"
             break
             ;;
         3)
+            echo "DEBUG: Matched choice 3."
             ROTATION_ANGLE="180"
             break
             ;;
@@ -56,7 +62,9 @@ EOF
             echo "Operation cancelled."
             return
             ;;
-        *) echo "  Invalid choice. Please enter 0-3." ;;
+        *)
+            echo "  Invalid choice. Please enter 0-3."
+            ;;
         esac
     done
 
@@ -75,6 +83,8 @@ EOF
         # Use the full path for the output file
         local output_file="$FULL_DEST_DIR/$(basename "$input_file")"
 
+        # DEBUG: Show the angle being used just before the command runs
+        echo "DEBUG: The 'process' function is using ROTATION_ANGLE: '$ROTATION_ANGLE'"
         echo "🔧 Rotating '$(basename "$input_file")' by ${ROTATION_ANGLE} degrees..."
 
         # The core ImageMagick command to rotate the image
