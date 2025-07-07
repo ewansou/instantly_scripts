@@ -1,5 +1,14 @@
+# === Config for Image Cropping Tool ===
+
+# How many seconds the watcher waits between checking for new files.
+POLL_INTERVAL=5
+
+# The crop geometry variables. (change when needed)
 WIDTH=56
-HEIGHT=89
+HEIGHT=10
 X=20
-Y=921
-COMMAND='magick "$input_file" -crop "${WIDTH}x${HEIGHT}+${X}+${Y}" "$output_file"' 
+Y=20
+
+# full command to execute.
+# The script will substitute the variables when it runs.
+COMMAND='magick "$input_file" -crop "${WIDTH}x${HEIGHT}+${X}+${Y}" "$output_file"'

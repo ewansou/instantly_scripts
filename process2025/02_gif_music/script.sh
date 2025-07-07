@@ -1,70 +1,90 @@
 #!/bin/bash
 
-# --- SETUP AND LOAD CONFIG ---
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PARENT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+# A script to watch a folder and add music to videos, using an external watcher.
 
-# Source the helper and the config file
-source "$PARENT_DIR/watcher.sh"
-if [[ ! -f "$SCRIPT_DIR/config-02-addmusic.txt" ]]; then
-    echo "❌ ERROR: config-02-addmusic.txt not found in $SCRIPT_DIR"
+# --- BOOTSTRAP: Make the script self-aware and portable ---
+# This ensures all paths are relative to the script's own location.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR" || exit 1
+
+# --- SETUP: Load the external watcher script ---
+# This looks for the watcher in the parent directory.
+if [[ ! -f "../watcher.sh" ]]; then
+    echo "❌ FATAL ERROR: watcher.sh not found in the parent directory."
+    echo "   (The script is in '$(pwd)', but watcher.sh was not found in '$(pwd)/..')"
     exit 1
 fi
-source "$SCRIPT_DIR/config-02-addmusic.txt"
+source "../watcher.sh"
 
-# This function contains the main logic
-add_music() {
-    # --- VALIDATE AND DEBUG ---
-    echo "--- Settings Loaded from Config ---"
-    echo "  Source Directory: $SRC_DIR"
-    echo "  Output Directory: $OUTPUT_DIR"
-    echo "  Moved Directory:  $MOVED_DIR"
-    echo "  Music File:       $MUSIC_FILE"
-    echo "-----------------------------------"
+############################################################
+# SECTION 1: THE MAIN "ADD MUSIC" LOGIC
+############################################################
+#
+# This is the main function that runs the tool.
+#
+add_music_tool() {
 
-    # Construct the FULL paths for all operations
-    local FULL_SRC_DIR="$PARENT_DIR/$SRC_DIR"
-    local FULL_OUTPUT_DIR="$PARENT_DIR/$OUTPUT_DIR"
-    local FULL_MOVED_DIR="$PARENT_DIR/$MOVED_DIR"
-    local FULL_MUSIC_FILE="$PARENT_DIR/$MUSIC_FILE"
+    # --- 1. Load Configuration ---
+    # Only the music file and command are loaded from the config.
+    local CONFIG_FILE="./config-02-addmusic.txt"
+    if [[ ! -f "$CONFIG_FILE" ]]; then
+        echo "❌ ERROR: Config file not found at '$CONFIG_FILE'"
+        return 1
+    fi
+    source "$CONFIG_FILE"
 
-    # Create the necessary directories
-    mkdir -p "$FULL_SRC_DIR" "$FULL_OUTPUT_DIR" "$FULL_MOVED_DIR"
+    # --- 2. Global Configs ---
+    local SRC_DIR="./tempDisplay"
+    local OUTPUT_DIR="./Output"
+    local MOVED_DIR="./Moved"
 
-    # --- DEFINE THE PROCESSOR FUNCTION ---
-    process_video() {
+    # --- 3. Validate that variables were loaded from config ---
+    if [[ -z "$MUSIC_FILE" || -z "$COMMAND" || -z "$POLL_INTERVAL" ]]; then
+        echo "❌ ERROR: A required variable (MUSIC_FILE, COMMAND, or POLL_INTERVAL) is missing from '$CONFIG_FILE'."
+        return 1
+    fi
+
+    # --- 4. Prepare Paths and Folders ---
+    echo "Initializing folders: $SRC_DIR, $OUTPUT_DIR, $MOVED_DIR"
+    mkdir -p "$SRC_DIR" "$OUTPUT_DIR" "$MOVED_DIR"
+
+    # --- 5. Define the Process Function ---
+    # This function will be called by the watcher for each file.
+    process_single_video() {
         local input_file="$1"
         local filename
         filename="$(basename "$input_file")"
-        local output_file="$FULL_OUTPUT_DIR/$filename"
-
-        # This is the safe way to handle command arguments from a config file
-        local -a args_array
-        read -r -a args_array <<< "$FFMPEG_ARGS"
+        # The output file needs a different name to avoid overwriting the input
+        local output_file="$OUTPUT_DIR/with_music_$filename"
 
         echo "🎵 Processing '$filename'..."
+        echo "   Running command from config: $COMMAND"
 
-        # Execute the command safely, without eval, can remove "-loglevel error" to see the version banner, configuration details, stream mapping, and the live progress bar
-        ffmpeg -y -loglevel error -i "$input_file" -i "$FULL_MUSIC_FILE" \ 
-               "${args_array[@]}" \
-               "$output_file"
+        # Execute the command string from the config file using eval.
+        eval "$COMMAND"
 
         if [[ $? -eq 0 ]]; then
             echo "✔ Success! Saved to $output_file"
-            mv "$input_file" "$FULL_MOVED_DIR"
+            mv "$input_file" "$MOVED_DIR"
         else
             echo "❌ Failed to process: $filename"
         fi
     }
 
-    # --- START THE WATCHER ---
+    # --- 6. START THE WATCHER ---
+    # Call the external watcher function with the 5 arguments it expects.
     watch_for_new_images \
-        "$FULL_SRC_DIR" \
-        "$FULL_OUTPUT_DIR" \
+        "$SRC_DIR" \
+        "$OUTPUT_DIR" \
         "$POLL_INTERVAL" \
-        "process_video" \
-        "mp4,MP4,mov,mkv,avi"
+        "process_single_video" \
+        "mp4,mov,mkv,avi,MP4,MOV,MKV,AVI"
 }
 
-# --- RUN THE SCRIPT ---
-add_music
+############################################################
+# SECTION 2: START THE SCRIPT
+############################################################
+#
+# This is the entry point that runs the main logic.
+#
+add_music_tool

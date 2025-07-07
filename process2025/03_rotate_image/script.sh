@@ -8,7 +8,7 @@ source "$PARENT_DIR/watcher.sh"
 # This is the main function that will be called by your external menu
 rotate_image() {
 
-    # --- 1. Load Configuration ---
+    # --- 1. Global Configuration ---
     # This is the settings for input/output and polling interval
     SRC_DIR="tempDisplay"
     DEST_DIR="output"
