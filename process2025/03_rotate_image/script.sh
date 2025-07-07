@@ -3,26 +3,17 @@
 # --- SETUP: Load watcher and get script's location ---
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARENT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-
-# This assumes your watcher script is one level up and named 'watcher.sh'
-if [[ -f "$PARENT_DIR/watcher.sh" ]]; then
-    source "$PARENT_DIR/watcher.sh"
-else
-    echo "❌ FATAL ERROR: watcher.sh not found in parent directory."
-    exit 1
-fi
+source "$PARENT_DIR/watcher.sh"
 
 # This is the main function that will be called by your external menu
 rotate_image() {
 
     # --- 1. Load Configuration ---
-    # This is the fix: Using the correct config filename.
-    local CONFIG_FILE="$SCRIPT_DIR/config-03-rotate-image.txt"
-    if [[ ! -f "$CONFIG_FILE" ]]; then
-        echo "❌ ERROR: Config file not found at '$CONFIG_FILE'"
-        return 1
-    fi
-    source "$CONFIG_FILE"
+    # This is the settings for input/output and polling interval
+    SRC_DIR="tempDisplay"
+    DEST_DIR="output"
+    MOVED_DIR="moved"
+    POLL_INTERVAL=7
 
     # --- 2. Get User Input for Rotation Angle ---
     # This menu is internal to this function, as requested.
