@@ -102,11 +102,14 @@ for (( i=1; i<=PLACEMENT_COUNT; i++ )); do
 done
 
 # === FILE VALIDATION ===
-# Check overlay files
-[ -f "$IMAGE_OVERLAY_FILENAME" ] || { echo "❌ Image overlay '$IMAGE_OVERLAY_FILENAME' not found."; exit 1; }
-
+# Check overlay files based on what processing is enabled
 if [[ "$ENABLE_VIDEO_PROCESSING" == "true" ]]; then
   [ -f "$VIDEO_OVERLAY_FILENAME" ] || { echo "❌ Video overlay '$VIDEO_OVERLAY_FILENAME' not found."; exit 1; }
+  # Only check image overlay if we might process images (not video-only mode)
+  echo "🎬 Video processing mode enabled"
+else
+  # If video processing is disabled, we must have image overlay
+  [ -f "$IMAGE_OVERLAY_FILENAME" ] || { echo "❌ Image overlay '$IMAGE_OVERLAY_FILENAME' not found."; exit 1; }
 fi
 
 # Check if background exists, if not we'll create a blank canvas
@@ -357,6 +360,12 @@ while true; do
         process_video "$CURRENT_FILE" "$OUTPUT"
       else
         echo "🖼️  Processing image $CURRENT_FILE → $OUTPUT"
+        # Check if image overlay exists before processing
+        if [ ! -f "$IMAGE_OVERLAY_FILENAME" ]; then
+          echo "❌ Cannot process image: Image overlay '$IMAGE_OVERLAY_FILENAME' not found"
+          echo "   💡 Enable video processing mode if you only want to process videos"
+          continue
+        fi
         place_image "$CURRENT_FILE" "$OUTPUT"
       fi
 
@@ -421,6 +430,12 @@ while true; do
         process_video "$CURRENT_FILE" "$OUTPUT"
       else
         echo "🖼️  Processing image $CURRENT_FILE → $OUTPUT"
+        # Check if image overlay exists before processing
+        if [ ! -f "$IMAGE_OVERLAY_FILENAME" ]; then
+          echo "❌ Cannot process image: Image overlay '$IMAGE_OVERLAY_FILENAME' not found"
+          echo "   💡 Enable video processing mode if you only want to process videos"
+          continue
+        fi
         place_image "$CURRENT_FILE" "$OUTPUT"
       fi
 
