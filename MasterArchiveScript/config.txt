@@ -1,0 +1,107 @@
+# ============================================================================
+# MASTER ARCHIVE SCRIPT - CONFIGURATION FILE
+# ============================================================================
+# 
+# HOW TO USE:
+# 1. Update the folder path variables below to match your setup
+# 2. Add/modify SOURCE_FOLDER/FILE_TYPE/DESTINATION_FOLDER groups as needed
+# 3. Double click on archive.bat on the computer desktop. This will run the main.sh script.
+#
+# VARIABLES:
+# - You can create any number of path variables (FOLDER_1, FOLDER_2, etc.)
+# - Use these variables in your SOURCE_FOLDER and DESTINATION_FOLDER paths
+# - DDMMYYYY_eventId will be automatically replaced with date and Event ID. The date is the current system date. Event ID is from user's input
+#
+# GROUPS:
+# Each group consists of 3 lines:
+#   SOURCE_FOLDER=path/to/source (can be a folder OR a single file)
+#   FILE_TYPE=jpg (case insensitive - matches .jpg, .JPG, .Jpg, etc.)
+#   DESTINATION_FOLDER=path/to/destination
+#
+# EXAMPLES:
+#   Move all JPG files from a folder:
+#     SOURCE_FOLDER=FOLDER_2/Display
+#     FILE_TYPE=jpg
+#     DESTINATION_FOLDER=FOLDER_1/DDMMYYYY_eventId/Originals/Display
+#
+#   Move a specific single file:
+#     SOURCE_FOLDER=FOLDER_1/DDMMYYYY_eventId/config.xml
+#     FILE_TYPE=xml
+#     DESTINATION_FOLDER=FOLDER_1/DDMMYYYY_eventId/Originals/Config
+#
+# DELETE EMPTY FOLDERS:
+# Add DELETE_EMPTY_FOLDER lines to explicitly specify which folders to check for deletion
+# These are checked AFTER all file movements are complete
+# ⚠️  IMPORTANT: Only EMPTY folders will be deleted. Non-empty folders will show WARNING and be preserved
+#
+# EXAMPLES:
+#   Check if prints folder is empty and delete it:
+#     DELETE_EMPTY_FOLDER=FOLDER_1/DDMMYYYY_eventId/prints
+#
+#   Check specific folders and delete only if they are completely empty:
+#     DELETE_EMPTY_FOLDER=FOLDER_2/TempFolder
+#     DELETE_EMPTY_FOLDER=FOLDER_1/DDMMYYYY_eventId/temporary
+#
+# ============================================================================
+
+# FOLDER PATH VARIABLES (customize these for your setup)
+FOLDER_1=C:/Users/ewans/Dropbox/Operations/#thisweek/INTELPC5/photobooth-new
+FOLDER_2=C:/Users/ewans/Desktop
+
+# ============================================================================
+# ARCHIVING GROUPS
+# ============================================================================
+
+SOURCE_FOLDER=FOLDER_1/DDMMYYYY_eventId
+FILE_TYPE=JPG
+DESTINATION_FOLDER=FOLDER_1/DDMMYYYY_eventId/Originals/Raw
+
+SOURCE_FOLDER=FOLDER_1/DDMMYYYY_eventId
+FILE_TYPE=xml
+DESTINATION_FOLDER=FOLDER_1/DDMMYYYY_eventId/Originals/Xml
+
+SOURCE_FOLDER=FOLDER_1/DDMMYYYY_eventId/prints
+FILE_TYPE=jpg
+DESTINATION_FOLDER=FOLDER_1/DDMMYYYY_eventId/Originals/Template
+
+SOURCE_FOLDER=FOLDER_2/Display
+FILE_TYPE=jpg
+DESTINATION_FOLDER=FOLDER_1/DDMMYYYY_eventId/Originals/Display
+
+SOURCE_FOLDER=FOLDER_2/Display
+FILE_TYPE=mp4
+DESTINATION_FOLDER=FOLDER_1/DDMMYYYY_eventId/Originals/Display
+
+SOURCE_FOLDER=FOLDER_2/ARC
+FILE_TYPE=jpg
+DESTINATION_FOLDER=FOLDER_1/DDMMYYYY_eventId/Originals/ARC
+
+SOURCE_FOLDER=FOLDER_2/ARC
+FILE_TYPE=mp4
+DESTINATION_FOLDER=FOLDER_1/DDMMYYYY_eventId/Originals/ARC
+
+SOURCE_FOLDER=FOLDER_2/Archive
+FILE_TYPE=jpg
+DESTINATION_FOLDER=FOLDER_1/DDMMYYYY_eventId/Originals/Archive
+
+SOURCE_FOLDER=FOLDER_2/Archive
+FILE_TYPE=mp4
+DESTINATION_FOLDER=FOLDER_1/DDMMYYYY_eventId/Originals/Archive
+
+SOURCE_FOLDER=FOLDER_2/Done
+FILE_TYPE=jpg
+DESTINATION_FOLDER=FOLDER_1/DDMMYYYY_eventId/Originals/Done
+
+SOURCE_FOLDER=FOLDER_2/Edited
+FILE_TYPE=jpg
+DESTINATION_FOLDER=FOLDER_1/DDMMYYYY_eventId/Originals/Edited
+
+SOURCE_FOLDER=FOLDER_2/Hold
+FILE_TYPE=jpg
+DESTINATION_FOLDER=FOLDER_1/DDMMYYYY_eventId/Originals/Hold
+
+# ============================================================================
+# DELETE EMPTY FOLDERS (checked after all file movements)
+# ============================================================================
+
+DELETE_EMPTY_FOLDER=FOLDER_1/DDMMYYYY_eventId/prints

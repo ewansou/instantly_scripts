@@ -4,8 +4,8 @@
 INPUT_FOLDER="./Source"
 OUTPUT_FOLDER="./Output"
 MOVED_FOLDER="./Moved"
-BACKGROUND="./background.jpg" # make sure is saved in RGB mode
-OVERLAY="./overlay.png" # make sure is saved in RGB mode
+BACKGROUND="./background.jpg"
+OVERLAY="./overlay.png"
 CHECK_INTERVAL_SECONDS=3
 CONFIG_FILE="./placement_config.txt"
 
@@ -25,10 +25,18 @@ done < "$CONFIG_FILE"
 : "${ENABLE_MOVE_TO_DISPLAY:=false}"
 : "${DISPLAY_FOLDER:=./Display}"
 : "${DISPLAY_DELAY_SECONDS:=2}"
+: "${RENAME:=0}"
+: "${RENAME_PREFIX:=}"
 
 # === PLACEMENT CONFIG VALIDATION ===
 if [[ -z "$PLACEMENT_COUNT" ]]; then
   echo "❌ PLACEMENT_COUNT not defined in $CONFIG_FILE"
+  exit 1
+fi
+
+# === RENAME CONFIG VALIDATION ===
+if [[ "$RENAME" == "1" && -z "$RENAME_PREFIX" ]]; then
+  echo "❌ RENAME_PREFIX must be defined when RENAME=1 in $CONFIG_FILE"
   exit 1
 fi
 
@@ -43,8 +51,22 @@ for (( i=1; i<=PLACEMENT_COUNT; i++ )); do
 done
 
 # === FILE VALIDATION ===
-[ -f "$BACKGROUND" ] || { echo "❌ Background image '$BACKGROUND' not found."; exit 1; }
 [ -f "$OVERLAY" ] || { echo "❌ Overlay image '$OVERLAY' not found."; exit 1; }
+
+# Check if background exists, if not we'll create a blank canvas
+USE_BLANK_CANVAS=false
+if [ ! -f "$BACKGROUND" ]; then
+  echo "⚠️  Background image '$BACKGROUND' not found."
+  echo "🎨 Creating blank canvas based on overlay dimensions..."
+  USE_BLANK_CANVAS=true
+  
+  # Get overlay dimensions and color mode
+  OVERLAY_INFO=$(magick identify -format "%wx%h %[colorspace]" "$OVERLAY")
+  OVERLAY_DIMENSIONS=$(echo "$OVERLAY_INFO" | cut -d' ' -f1)
+  OVERLAY_COLORSPACE=$(echo "$OVERLAY_INFO" | cut -d' ' -f2)
+  
+  echo "📏 Overlay dimensions: $OVERLAY_DIMENSIONS, Colorspace: $OVERLAY_COLORSPACE"
+fi
 
 # === FOLDER SETUP ===
 mkdir -p "$INPUT_FOLDER" "$OUTPUT_FOLDER" "$MOVED_FOLDER"
@@ -54,7 +76,18 @@ place_image() {
   local input_image="$1"
   local output_image="$2"
 
-  local cmd=(magick "$BACKGROUND")
+  local cmd=()
+  
+  # Start with either background image or blank canvas
+  if [ "$USE_BLANK_CANVAS" = true ]; then
+    cmd=(magick -size "$OVERLAY_DIMENSIONS" xc:white)
+    # Convert to same colorspace as overlay
+    if [[ "$OVERLAY_COLORSPACE" == "sRGB" ]]; then
+      cmd+=(-colorspace sRGB)
+    fi
+  else
+    cmd=(magick "$BACKGROUND")
+  fi
 
   for (( i=1; i<=PLACEMENT_COUNT; i++ )); do
     WIDTH=$(eval echo "\$WIDTH$i")
@@ -81,43 +114,113 @@ place_image() {
 echo "📂 Watching Source folder at: $(realpath "$INPUT_FOLDER")"
 echo "⏳ Monitoring $INPUT_FOLDER every $CHECK_INTERVAL_SECONDS seconds..."
 
+# Initialize rename counter
+RENAME_COUNTER=1
+
 while true; do
-  find "$INPUT_FOLDER" -type f \( \
-    -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \
-    -o -iname "*.JPG" -o -iname "*.JPEG" -o -iname "*.PNG" \
-  \) | while IFS= read -r FILE; do
-    BASENAME=$(basename "$FILE" | sed 's/\.[^.]*$//')
-    EXTENSION="${FILE##*.}"
-    OUTPUT="$OUTPUT_FOLDER/${BASENAME}.jpg"
-    DEST_MOVED="$MOVED_FOLDER/${BASENAME}.${EXTENSION}"
+  if [[ "$RENAME" == "1" ]]; then
+    # Create temporary file list sorted in ascending order
+    TEMP_FILE_LIST=$(mktemp)
+    find "$INPUT_FOLDER" -type f \( \
+      -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \
+      -o -iname "*.JPG" -o -iname "*.JPEG" -o -iname "*.PNG" \
+    \) | sort > "$TEMP_FILE_LIST"
 
-    if [ -f "$OUTPUT" ]; then
-      echo "⚠️  Skipping: '$FILE'"
-      echo "   ↪ A file with the same name already exists in '$OUTPUT_FOLDER': $(basename "$OUTPUT")"
-      echo "   🧼 To reprocess it, delete the output file or rename the input."
-      continue
-    fi
+    while IFS= read -r FILE; do
+      [[ -z "$FILE" ]] && continue  # Skip empty lines
 
-    echo "🖼️  Processing $FILE → $OUTPUT"
-    place_image "$FILE" "$OUTPUT"
+      # Generate new filename with prefix and counter
+      EXTENSION="${FILE##*.}"
+      NEW_FILENAME="${RENAME_PREFIX}-$(printf "%04d" $RENAME_COUNTER).${EXTENSION}"
+      NEW_FILE_PATH="$INPUT_FOLDER/$NEW_FILENAME"
 
-    if [ $? -eq 0 ]; then
-      mv "$FILE" "$DEST_MOVED"
-      echo "📁 Moved original to $DEST_MOVED"
-
-      if [[ "$ENABLE_MOVE_TO_DISPLAY" == "true" ]]; then
-        mkdir -p "$DISPLAY_FOLDER"
-        echo "⏳ Waiting $DISPLAY_DELAY_SECONDS seconds before moving to display..."
-        sleep "$DISPLAY_DELAY_SECONDS"
-
-        FINAL_DISPLAY_PATH="$DISPLAY_FOLDER/$(basename "$OUTPUT")"
-        mv "$OUTPUT" "$FINAL_DISPLAY_PATH"
-        echo "🖼️  Moved to display folder: $FINAL_DISPLAY_PATH"
+      # Rename the file
+      if mv "$FILE" "$NEW_FILE_PATH" 2>/dev/null; then
+        echo "🔄 Renamed: $(basename "$FILE") → $NEW_FILENAME"
+        CURRENT_FILE="$NEW_FILE_PATH"
+        ((RENAME_COUNTER++))
+      else
+        echo "⚠️  Failed to rename: $FILE"
+        CURRENT_FILE="$FILE"
       fi
-    else
-      echo "❌ Failed to process $FILE"
-    fi
-  done
+
+      # Process the file (renamed or original)
+      BASENAME=$(basename "$CURRENT_FILE" | sed 's/\.[^.]*$//')
+      EXTENSION="${CURRENT_FILE##*.}"
+      OUTPUT="$OUTPUT_FOLDER/${BASENAME}.jpg"
+      DEST_MOVED="$MOVED_FOLDER/${BASENAME}.${EXTENSION}"
+
+      if [ -f "$OUTPUT" ]; then
+        echo "⚠️  Skipping: '$CURRENT_FILE'"
+        echo "   ↪ A file with the same name already exists in '$OUTPUT_FOLDER': $(basename "$OUTPUT")"
+        echo "   🧼 To reprocess it, delete the output file or rename the input."
+        continue
+      fi
+
+      echo "🖼️  Processing $CURRENT_FILE → $OUTPUT"
+      place_image "$CURRENT_FILE" "$OUTPUT"
+
+      if [ $? -eq 0 ]; then
+        mv "$CURRENT_FILE" "$DEST_MOVED"
+        echo "📁 Moved original to $DEST_MOVED"
+
+        if [[ "$ENABLE_MOVE_TO_DISPLAY" == "true" ]]; then
+          mkdir -p "$DISPLAY_FOLDER"
+          echo "⏳ Waiting $DISPLAY_DELAY_SECONDS seconds before moving to display..."
+          sleep "$DISPLAY_DELAY_SECONDS"
+
+          FINAL_DISPLAY_PATH="$DISPLAY_FOLDER/$(basename "$OUTPUT")"
+          mv "$OUTPUT" "$FINAL_DISPLAY_PATH"
+          echo "🖼️  Moved to display folder: $FINAL_DISPLAY_PATH"
+        fi
+      else
+        echo "❌ Failed to process $CURRENT_FILE"
+      fi
+    done < "$TEMP_FILE_LIST"
+
+    # Clean up temporary file
+    rm -f "$TEMP_FILE_LIST"
+  else
+    # Original processing without renaming
+    find "$INPUT_FOLDER" -type f \( \
+      -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \
+      -o -iname "*.JPG" -o -iname "*.JPEG" -o -iname "*.PNG" \
+    \) | while IFS= read -r FILE; do
+      CURRENT_FILE="$FILE"
+
+      BASENAME=$(basename "$CURRENT_FILE" | sed 's/\.[^.]*$//')
+      EXTENSION="${CURRENT_FILE##*.}"
+      OUTPUT="$OUTPUT_FOLDER/${BASENAME}.jpg"
+      DEST_MOVED="$MOVED_FOLDER/${BASENAME}.${EXTENSION}"
+
+      if [ -f "$OUTPUT" ]; then
+        echo "⚠️  Skipping: '$FILE'"
+        echo "   ↪ A file with the same name already exists in '$OUTPUT_FOLDER': $(basename "$OUTPUT")"
+        echo "   🧼 To reprocess it, delete the output file or rename the input."
+        continue
+      fi
+
+      echo "🖼️  Processing $CURRENT_FILE → $OUTPUT"
+      place_image "$CURRENT_FILE" "$OUTPUT"
+
+      if [ $? -eq 0 ]; then
+        mv "$CURRENT_FILE" "$DEST_MOVED"
+        echo "📁 Moved original to $DEST_MOVED"
+
+        if [[ "$ENABLE_MOVE_TO_DISPLAY" == "true" ]]; then
+          mkdir -p "$DISPLAY_FOLDER"
+          echo "⏳ Waiting $DISPLAY_DELAY_SECONDS seconds before moving to display..."
+          sleep "$DISPLAY_DELAY_SECONDS"
+
+          FINAL_DISPLAY_PATH="$DISPLAY_FOLDER/$(basename "$OUTPUT")"
+          mv "$OUTPUT" "$FINAL_DISPLAY_PATH"
+          echo "🖼️  Moved to display folder: $FINAL_DISPLAY_PATH"
+        fi
+      else
+        echo "❌ Failed to process $CURRENT_FILE"
+      fi
+    done
+  fi
 
   sleep "$CHECK_INTERVAL_SECONDS"
 done
