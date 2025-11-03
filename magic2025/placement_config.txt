@@ -9,7 +9,7 @@
 # ====================
 # GENERAL SETTINGS
 # ====================
-ENABLE_MOVE_TO_DISPLAY=true
+ENABLE_MOVE_TO_DISPLAY=false
 DISPLAY_FOLDER=./Display
 DISPLAY_DELAY_SECONDS=2
 

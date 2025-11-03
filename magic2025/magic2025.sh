@@ -25,7 +25,9 @@ done < "$CONFIG_FILE"
 # Function to normalize boolean values (1/0, true/false) to true/false
 normalize_bool() {
   local value="$1"
-  case "${value,,}" in
+  # Convert to lowercase for comparison
+  local lower_value=$(echo "$value" | tr '[:upper:]' '[:lower:]')
+  case "$lower_value" in
     1|true|yes|on) echo "true" ;;
     0|false|no|off|"") echo "false" ;;
     *) echo "false" ;;
@@ -38,6 +40,10 @@ IMAGE_RENAME=$(normalize_bool "$IMAGE_RENAME")
 VIDEO_RENAME=$(normalize_bool "$VIDEO_RENAME")
 ENABLE_VIDEO_PROCESSING=$(normalize_bool "$ENABLE_VIDEO_PROCESSING")
 VIDEO_INCLUDE_INPUT_AUDIO=$(normalize_bool "$VIDEO_INCLUDE_INPUT_AUDIO")
+
+# Debug output (remove after testing)
+echo "🔍 Debug: ENABLE_VIDEO_PROCESSING='$ENABLE_VIDEO_PROCESSING'"
+echo "🔍 Debug: ENABLE_MOVE_TO_DISPLAY='$ENABLE_MOVE_TO_DISPLAY'"
 
 # === DEFAULTS & FALLBACKS ===
 : "${ENABLE_MOVE_TO_DISPLAY:=false}"
