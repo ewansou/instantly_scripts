@@ -21,22 +21,38 @@ while IFS='=' read -r key value; do
   fi
 done < "$CONFIG_FILE"
 
+# === NORMALIZE BOOLEAN VALUES ===
+# Function to normalize boolean values (1/0, true/false) to true/false
+normalize_bool() {
+  local value="$1"
+  case "${value,,}" in
+    1|true|yes|on) echo "true" ;;
+    0|false|no|off|"") echo "false" ;;
+    *) echo "false" ;;
+  esac
+}
+
+# Normalize all boolean configurations
+ENABLE_MOVE_TO_DISPLAY=$(normalize_bool "$ENABLE_MOVE_TO_DISPLAY")
+IMAGE_RENAME=$(normalize_bool "$IMAGE_RENAME")
+VIDEO_RENAME=$(normalize_bool "$VIDEO_RENAME")
+ENABLE_VIDEO_PROCESSING=$(normalize_bool "$ENABLE_VIDEO_PROCESSING")
+VIDEO_INCLUDE_INPUT_AUDIO=$(normalize_bool "$VIDEO_INCLUDE_INPUT_AUDIO")
+
 # === DEFAULTS & FALLBACKS ===
 : "${ENABLE_MOVE_TO_DISPLAY:=false}"
 : "${DISPLAY_FOLDER:=./Display}"
 : "${DISPLAY_DELAY_SECONDS:=2}"
-: "${RENAME:=0}"
-: "${RENAME_PREFIX:=}"
-: "${IMAGE_RENAME:=$RENAME}"
-: "${IMAGE_RENAME_PREFIX:=$RENAME_PREFIX}"
-: "${VIDEO_RENAME:=$RENAME}"
-: "${VIDEO_RENAME_PREFIX:=$RENAME_PREFIX}"
-: "${ENABLE_VIDEO_PROCESSING:=0}"
+: "${IMAGE_RENAME:=false}"
+: "${IMAGE_RENAME_PREFIX:=}"
+: "${VIDEO_RENAME:=false}"
+: "${VIDEO_RENAME_PREFIX:=}"
+: "${ENABLE_VIDEO_PROCESSING:=false}"
 : "${VIDEO_WIDTH:=}"
 : "${VIDEO_HEIGHT:=}"
 : "${VIDEO_X:=0}"
 : "${VIDEO_Y:=0}"
-: "${VIDEO_INCLUDE_INPUT_AUDIO:=0}"
+: "${VIDEO_INCLUDE_INPUT_AUDIO:=false}"
 : "${IMAGE_OVERLAY_FILENAME:=$OVERLAY}"
 : "${VIDEO_OVERLAY_FILENAME:=$OVERLAY}"
 
@@ -51,18 +67,18 @@ if [[ -z "$PLACEMENT_COUNT" ]]; then
 fi
 
 # === RENAME CONFIG VALIDATION ===
-if [[ "$IMAGE_RENAME" == "1" && -z "$IMAGE_RENAME_PREFIX" ]]; then
-  echo "❌ IMAGE_RENAME_PREFIX must be defined when IMAGE_RENAME=1 in $CONFIG_FILE"
+if [[ "$IMAGE_RENAME" == "true" && -z "$IMAGE_RENAME_PREFIX" ]]; then
+  echo "❌ IMAGE_RENAME_PREFIX must be defined when IMAGE_RENAME=true in $CONFIG_FILE"
   exit 1
 fi
 
-if [[ "$VIDEO_RENAME" == "1" && -z "$VIDEO_RENAME_PREFIX" ]]; then
-  echo "❌ VIDEO_RENAME_PREFIX must be defined when VIDEO_RENAME=1 in $CONFIG_FILE"
+if [[ "$VIDEO_RENAME" == "true" && -z "$VIDEO_RENAME_PREFIX" ]]; then
+  echo "❌ VIDEO_RENAME_PREFIX must be defined when VIDEO_RENAME=true in $CONFIG_FILE"
   exit 1
 fi
 
 # === VIDEO CONFIG VALIDATION ===
-if [[ "$ENABLE_VIDEO_PROCESSING" == "1" ]]; then
+if [[ "$ENABLE_VIDEO_PROCESSING" == "true" ]]; then
   if [[ -z "$VIDEO_WIDTH" || -z "$VIDEO_HEIGHT" ]]; then
     echo "❌ VIDEO_WIDTH and VIDEO_HEIGHT must be defined when ENABLE_VIDEO_PROCESSING=1 in $CONFIG_FILE"
     exit 1
@@ -83,7 +99,7 @@ done
 # Check overlay files
 [ -f "$IMAGE_OVERLAY_FILENAME" ] || { echo "❌ Image overlay '$IMAGE_OVERLAY_FILENAME' not found."; exit 1; }
 
-if [[ "$ENABLE_VIDEO_PROCESSING" == "1" ]]; then
+if [[ "$ENABLE_VIDEO_PROCESSING" == "true" ]]; then
   [ -f "$VIDEO_OVERLAY_FILENAME" ] || { echo "❌ Video overlay '$VIDEO_OVERLAY_FILENAME' not found."; exit 1; }
 fi
 
@@ -215,7 +231,7 @@ process_video() {
   echo "🎬 Step 3/3: Adding overlay..."
   # Add overlay on top and handle audio
   local audio_opts=""
-  if [[ "$VIDEO_INCLUDE_INPUT_AUDIO" == "1" ]]; then
+  if [[ "$VIDEO_INCLUDE_INPUT_AUDIO" == "true" ]]; then
     audio_opts="-map 1:a? -c:a copy"
   fi
   
@@ -242,10 +258,10 @@ process_video() {
 echo "📂 Watching Source folder at: $(realpath "$INPUT_FOLDER")"
 echo "⏳ Monitoring $INPUT_FOLDER every $CHECK_INTERVAL_SECONDS seconds..."
 
-if [[ "$ENABLE_VIDEO_PROCESSING" == "1" ]]; then
+if [[ "$ENABLE_VIDEO_PROCESSING" == "true" ]]; then
   echo "🎬 Video processing enabled (MP4 files)"
   echo "   Video size: ${VIDEO_WIDTH}x${VIDEO_HEIGHT} at position +${VIDEO_X}+${VIDEO_Y}"
-  echo "   Audio: $([[ "$VIDEO_INCLUDE_INPUT_AUDIO" == "1" ]] && echo "Preserved" || echo "Removed")"
+  echo "   Audio: $([[ "$VIDEO_INCLUDE_INPUT_AUDIO" == "true" ]] && echo "Preserved" || echo "Removed")"
 fi
 
 # Initialize rename counters
@@ -253,7 +269,7 @@ IMAGE_RENAME_COUNTER=1
 VIDEO_RENAME_COUNTER=1
 
 while true; do
-  if [[ "$IMAGE_RENAME" == "1" || "$VIDEO_RENAME" == "1" ]]; then
+  if [[ "$IMAGE_RENAME" == "true" || "$VIDEO_RENAME" == "true" ]]; then
     # Create temporary file list sorted in ascending order
     TEMP_FILE_LIST=$(mktemp)
     
@@ -262,7 +278,7 @@ while true; do
     FIND_PATTERN="$FIND_PATTERN -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png'"
     FIND_PATTERN="$FIND_PATTERN -o -iname '*.JPG' -o -iname '*.JPEG' -o -iname '*.PNG'"
     
-    if [[ "$ENABLE_VIDEO_PROCESSING" == "1" ]]; then
+    if [[ "$ENABLE_VIDEO_PROCESSING" == "true" ]]; then
       FIND_PATTERN="$FIND_PATTERN -o -iname '*.mp4' -o -iname '*.MP4'"
     fi
     FIND_PATTERN="$FIND_PATTERN \)"
@@ -277,11 +293,11 @@ while true; do
       EXTENSION_LOWER=$(echo "$EXTENSION" | tr '[:upper:]' '[:lower:]')
       
       # Determine rename settings based on file type
-      if [[ "$EXTENSION_LOWER" == "mp4" && "$VIDEO_RENAME" == "1" ]]; then
+      if [[ "$EXTENSION_LOWER" == "mp4" && "$VIDEO_RENAME" == "true" ]]; then
         NEW_FILENAME="${VIDEO_RENAME_PREFIX}-$(printf "%04d" $VIDEO_RENAME_COUNTER).${EXTENSION}"
         SHOULD_RENAME=true
         COUNTER_VAR="VIDEO_RENAME_COUNTER"
-      elif [[ "$EXTENSION_LOWER" =~ ^(jpg|jpeg|png)$ && "$IMAGE_RENAME" == "1" ]]; then
+      elif [[ "$EXTENSION_LOWER" =~ ^(jpg|jpeg|png)$ && "$IMAGE_RENAME" == "true" ]]; then
         NEW_FILENAME="${IMAGE_RENAME_PREFIX}-$(printf "%04d" $IMAGE_RENAME_COUNTER).${EXTENSION}"
         SHOULD_RENAME=true
         COUNTER_VAR="IMAGE_RENAME_COUNTER"
@@ -314,7 +330,7 @@ while true; do
       EXTENSION_LOWER=$(echo "$EXTENSION" | tr '[:upper:]' '[:lower:]')
       
       # Determine if this is a video or image
-      if [[ "$ENABLE_VIDEO_PROCESSING" == "1" && "$EXTENSION_LOWER" == "mp4" ]]; then
+      if [[ "$ENABLE_VIDEO_PROCESSING" == "true" && "$EXTENSION_LOWER" == "mp4" ]]; then
         OUTPUT="$OUTPUT_FOLDER/${BASENAME}.mp4"
       else
         OUTPUT="$OUTPUT_FOLDER/${BASENAME}.jpg"
@@ -330,7 +346,7 @@ while true; do
       fi
 
       # Process based on file type
-      if [[ "$ENABLE_VIDEO_PROCESSING" == "1" && "$EXTENSION_LOWER" == "mp4" ]]; then
+      if [[ "$ENABLE_VIDEO_PROCESSING" == "true" && "$EXTENSION_LOWER" == "mp4" ]]; then
         echo "🎬 Processing video $CURRENT_FILE → $OUTPUT"
         process_video "$CURRENT_FILE" "$OUTPUT"
       else
@@ -365,7 +381,7 @@ while true; do
     FIND_PATTERN="$FIND_PATTERN -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png'"
     FIND_PATTERN="$FIND_PATTERN -o -iname '*.JPG' -o -iname '*.JPEG' -o -iname '*.PNG'"
     
-    if [[ "$ENABLE_VIDEO_PROCESSING" == "1" ]]; then
+    if [[ "$ENABLE_VIDEO_PROCESSING" == "true" ]]; then
       FIND_PATTERN="$FIND_PATTERN -o -iname '*.mp4' -o -iname '*.MP4'"
     fi
     FIND_PATTERN="$FIND_PATTERN \)"
@@ -378,7 +394,7 @@ while true; do
       EXTENSION_LOWER=$(echo "$EXTENSION" | tr '[:upper:]' '[:lower:]')
       
       # Determine if this is a video or image
-      if [[ "$ENABLE_VIDEO_PROCESSING" == "1" && "$EXTENSION_LOWER" == "mp4" ]]; then
+      if [[ "$ENABLE_VIDEO_PROCESSING" == "true" && "$EXTENSION_LOWER" == "mp4" ]]; then
         OUTPUT="$OUTPUT_FOLDER/${BASENAME}.mp4"
       else
         OUTPUT="$OUTPUT_FOLDER/${BASENAME}.jpg"
@@ -394,7 +410,7 @@ while true; do
       fi
 
       # Process based on file type
-      if [[ "$ENABLE_VIDEO_PROCESSING" == "1" && "$EXTENSION_LOWER" == "mp4" ]]; then
+      if [[ "$ENABLE_VIDEO_PROCESSING" == "true" && "$EXTENSION_LOWER" == "mp4" ]]; then
         echo "🎬 Processing video $CURRENT_FILE → $OUTPUT"
         process_video "$CURRENT_FILE" "$OUTPUT"
       else
