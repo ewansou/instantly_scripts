@@ -27,6 +27,22 @@ done < "$CONFIG_FILE"
 : "${DISPLAY_DELAY_SECONDS:=2}"
 : "${RENAME:=0}"
 : "${RENAME_PREFIX:=}"
+: "${IMAGE_RENAME:=$RENAME}"
+: "${IMAGE_RENAME_PREFIX:=$RENAME_PREFIX}"
+: "${VIDEO_RENAME:=$RENAME}"
+: "${VIDEO_RENAME_PREFIX:=$RENAME_PREFIX}"
+: "${ENABLE_VIDEO_PROCESSING:=0}"
+: "${VIDEO_WIDTH:=}"
+: "${VIDEO_HEIGHT:=}"
+: "${VIDEO_X:=0}"
+: "${VIDEO_Y:=0}"
+: "${VIDEO_INCLUDE_INPUT_AUDIO:=0}"
+: "${IMAGE_OVERLAY_FILENAME:=$OVERLAY}"
+: "${VIDEO_OVERLAY_FILENAME:=$OVERLAY}"
+
+# Add ./ prefix if not already present
+[[ "$IMAGE_OVERLAY_FILENAME" != /* && "$IMAGE_OVERLAY_FILENAME" != ./* ]] && IMAGE_OVERLAY_FILENAME="./$IMAGE_OVERLAY_FILENAME"
+[[ "$VIDEO_OVERLAY_FILENAME" != /* && "$VIDEO_OVERLAY_FILENAME" != ./* ]] && VIDEO_OVERLAY_FILENAME="./$VIDEO_OVERLAY_FILENAME"
 
 # === PLACEMENT CONFIG VALIDATION ===
 if [[ -z "$PLACEMENT_COUNT" ]]; then
@@ -35,9 +51,22 @@ if [[ -z "$PLACEMENT_COUNT" ]]; then
 fi
 
 # === RENAME CONFIG VALIDATION ===
-if [[ "$RENAME" == "1" && -z "$RENAME_PREFIX" ]]; then
-  echo "❌ RENAME_PREFIX must be defined when RENAME=1 in $CONFIG_FILE"
+if [[ "$IMAGE_RENAME" == "1" && -z "$IMAGE_RENAME_PREFIX" ]]; then
+  echo "❌ IMAGE_RENAME_PREFIX must be defined when IMAGE_RENAME=1 in $CONFIG_FILE"
   exit 1
+fi
+
+if [[ "$VIDEO_RENAME" == "1" && -z "$VIDEO_RENAME_PREFIX" ]]; then
+  echo "❌ VIDEO_RENAME_PREFIX must be defined when VIDEO_RENAME=1 in $CONFIG_FILE"
+  exit 1
+fi
+
+# === VIDEO CONFIG VALIDATION ===
+if [[ "$ENABLE_VIDEO_PROCESSING" == "1" ]]; then
+  if [[ -z "$VIDEO_WIDTH" || -z "$VIDEO_HEIGHT" ]]; then
+    echo "❌ VIDEO_WIDTH and VIDEO_HEIGHT must be defined when ENABLE_VIDEO_PROCESSING=1 in $CONFIG_FILE"
+    exit 1
+  fi
 fi
 
 for (( i=1; i<=PLACEMENT_COUNT; i++ )); do
@@ -51,7 +80,12 @@ for (( i=1; i<=PLACEMENT_COUNT; i++ )); do
 done
 
 # === FILE VALIDATION ===
-[ -f "$OVERLAY" ] || { echo "❌ Overlay image '$OVERLAY' not found."; exit 1; }
+# Check overlay files
+[ -f "$IMAGE_OVERLAY_FILENAME" ] || { echo "❌ Image overlay '$IMAGE_OVERLAY_FILENAME' not found."; exit 1; }
+
+if [[ "$ENABLE_VIDEO_PROCESSING" == "1" ]]; then
+  [ -f "$VIDEO_OVERLAY_FILENAME" ] || { echo "❌ Video overlay '$VIDEO_OVERLAY_FILENAME' not found."; exit 1; }
+fi
 
 # Check if background exists, if not we'll create a blank canvas
 USE_BLANK_CANVAS=false
@@ -60,8 +94,8 @@ if [ ! -f "$BACKGROUND" ]; then
   echo "🎨 Creating blank canvas based on overlay dimensions..."
   USE_BLANK_CANVAS=true
   
-  # Get overlay dimensions and color mode
-  OVERLAY_INFO=$(magick identify -format "%wx%h %[colorspace]" "$OVERLAY")
+  # Get overlay dimensions and color mode (using image overlay as reference)
+  OVERLAY_INFO=$(magick identify -format "%wx%h %[colorspace]" "$IMAGE_OVERLAY_FILENAME")
   OVERLAY_DIMENSIONS=$(echo "$OVERLAY_INFO" | cut -d' ' -f1)
   OVERLAY_COLORSPACE=$(echo "$OVERLAY_INFO" | cut -d' ' -f2)
   
@@ -105,49 +139,187 @@ place_image() {
   done
 
   # Add overlay at top-left
-  cmd+=("$OVERLAY" -gravity NorthWest -geometry "+0+0" -composite -flatten "$output_image")
+  cmd+=("$IMAGE_OVERLAY_FILENAME" -gravity NorthWest -geometry "+0+0" -composite -flatten "$output_image")
 
   "${cmd[@]}"
+}
+
+# === FUNCTION: Video processing with ffmpeg ===
+process_video() {
+  local input_video="$1"
+  local output_video="$2"
+  
+  # Get video overlay dimensions (take only first frame if multiple)
+  local VIDEO_OVERLAY_INFO=$(magick identify -format "%wx%h\n" "$VIDEO_OVERLAY_FILENAME" 2>/dev/null | head -n1)
+  local VIDEO_OVERLAY_DIMENSIONS="${VIDEO_OVERLAY_INFO%% *}"  # Take first dimension if multiple
+  
+  # Validate dimensions format
+  if [[ ! "$VIDEO_OVERLAY_DIMENSIONS" =~ ^[0-9]+x[0-9]+$ ]]; then
+    echo "❌ Invalid video overlay dimensions: $VIDEO_OVERLAY_DIMENSIONS"
+    return 1
+  fi
+  
+  # Create temporary file names
+  local temp_resized="/tmp/magic2025_resized_$$_$(basename "$input_video")"
+  local temp_on_bg="/tmp/magic2025_on_bg_$$_$(basename "$input_video")"
+  
+  # Ensure cleanup on exit
+  trap "rm -f '$temp_resized' '$temp_on_bg'" EXIT
+  
+  echo "🎬 Step 1/3: Resizing video to ${VIDEO_WIDTH}x${VIDEO_HEIGHT}..."
+  # Resize the video
+  if ! ffmpeg -i "$input_video" -filter:v "scale=${VIDEO_WIDTH}:${VIDEO_HEIGHT}" -preset ultrafast -y "$temp_resized" 2>&1 | grep -E "(error|Error)" >&2; then
+    :
+  fi
+  
+  if [ ! -f "$temp_resized" ]; then
+    echo "❌ Failed to resize video"
+    rm -f "$temp_resized" "$temp_on_bg"
+    return 1
+  fi
+  
+  echo "🎬 Step 2/3: Placing video on background at position +${VIDEO_X}+${VIDEO_Y}..."
+  # Place resized video on background
+  if [ "$USE_BLANK_CANVAS" = true ]; then
+    # Create blank canvas and place video
+    echo "   Using blank canvas with dimensions: ${VIDEO_OVERLAY_DIMENSIONS}"
+    if ! ffmpeg -f lavfi -i "color=c=white:s=${VIDEO_OVERLAY_DIMENSIONS}" -i "$temp_resized" \
+      -filter_complex "[1]scale=${VIDEO_WIDTH}:${VIDEO_HEIGHT}[vid]; [0][vid]overlay=${VIDEO_X}:${VIDEO_Y}:shortest=1[out]" \
+      -map "[out]" -preset ultrafast -y "$temp_on_bg" 2>&1 | grep -E "(error|Error)" >&2; then
+      :
+    fi
+    
+    if [ ! -f "$temp_on_bg" ]; then
+      echo "❌ Failed to place video on blank canvas"
+      echo "   Debug: VIDEO_OVERLAY_DIMENSIONS=${VIDEO_OVERLAY_DIMENSIONS}"
+      echo "   Debug: VIDEO_WIDTH=${VIDEO_WIDTH}, VIDEO_HEIGHT=${VIDEO_HEIGHT}"
+      echo "   Debug: VIDEO_X=${VIDEO_X}, VIDEO_Y=${VIDEO_Y}"
+      rm -f "$temp_resized" "$temp_on_bg"
+      return 1
+    fi
+  else
+    # Use existing background
+    if ! ffmpeg -loop 1 -i "$BACKGROUND" -i "$temp_resized" \
+      -filter_complex "[1]scale=${VIDEO_WIDTH}:${VIDEO_HEIGHT}[vid]; [0][vid]overlay=${VIDEO_X}:${VIDEO_Y}:shortest=1[out]" \
+      -map "[out]" -preset ultrafast -y "$temp_on_bg" 2>&1 | grep -E "(error|Error)" >&2; then
+      :
+    fi
+    
+    if [ ! -f "$temp_on_bg" ]; then
+      echo "❌ Failed to place video on background"
+      rm -f "$temp_resized" "$temp_on_bg"
+      return 1
+    fi
+  fi
+  
+  echo "🎬 Step 3/3: Adding overlay..."
+  # Add overlay on top and handle audio
+  local audio_opts=""
+  if [[ "$VIDEO_INCLUDE_INPUT_AUDIO" == "1" ]]; then
+    audio_opts="-map 1:a? -c:a copy"
+  fi
+  
+  if ! ffmpeg -loop 1 -i "$VIDEO_OVERLAY_FILENAME" -i "$temp_on_bg" \
+    -filter_complex "[1]scale=${VIDEO_OVERLAY_DIMENSIONS}[vid]; [vid][0]overlay=0:0:shortest=1[out]" \
+    -map "[out]" $audio_opts -preset ultrafast -y "$output_video" 2>&1 | grep -E "(error|Error)" >&2; then
+    :
+  fi
+  
+  if [ ! -f "$output_video" ]; then
+    echo "❌ Failed to add overlay"
+    rm -f "$temp_resized" "$temp_on_bg"
+    return 1
+  fi
+  
+  # Cleanup temp files
+  rm -f "$temp_resized" "$temp_on_bg"
+  
+  echo "✅ Video processing completed successfully"
+  return 0
 }
 
 # === MAIN LOOP ===
 echo "📂 Watching Source folder at: $(realpath "$INPUT_FOLDER")"
 echo "⏳ Monitoring $INPUT_FOLDER every $CHECK_INTERVAL_SECONDS seconds..."
 
-# Initialize rename counter
-RENAME_COUNTER=1
+if [[ "$ENABLE_VIDEO_PROCESSING" == "1" ]]; then
+  echo "🎬 Video processing enabled (MP4 files)"
+  echo "   Video size: ${VIDEO_WIDTH}x${VIDEO_HEIGHT} at position +${VIDEO_X}+${VIDEO_Y}"
+  echo "   Audio: $([[ "$VIDEO_INCLUDE_INPUT_AUDIO" == "1" ]] && echo "Preserved" || echo "Removed")"
+fi
+
+# Initialize rename counters
+IMAGE_RENAME_COUNTER=1
+VIDEO_RENAME_COUNTER=1
 
 while true; do
-  if [[ "$RENAME" == "1" ]]; then
+  if [[ "$IMAGE_RENAME" == "1" || "$VIDEO_RENAME" == "1" ]]; then
     # Create temporary file list sorted in ascending order
     TEMP_FILE_LIST=$(mktemp)
-    find "$INPUT_FOLDER" -type f \( \
-      -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \
-      -o -iname "*.JPG" -o -iname "*.JPEG" -o -iname "*.PNG" \
-    \) | sort > "$TEMP_FILE_LIST"
+    
+    # Build find pattern based on enabled features
+    FIND_PATTERN="-type f \("
+    FIND_PATTERN="$FIND_PATTERN -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png'"
+    FIND_PATTERN="$FIND_PATTERN -o -iname '*.JPG' -o -iname '*.JPEG' -o -iname '*.PNG'"
+    
+    if [[ "$ENABLE_VIDEO_PROCESSING" == "1" ]]; then
+      FIND_PATTERN="$FIND_PATTERN -o -iname '*.mp4' -o -iname '*.MP4'"
+    fi
+    FIND_PATTERN="$FIND_PATTERN \)"
+    
+    eval "find '$INPUT_FOLDER' $FIND_PATTERN" | sort > "$TEMP_FILE_LIST"
 
     while IFS= read -r FILE; do
       [[ -z "$FILE" ]] && continue  # Skip empty lines
 
-      # Generate new filename with prefix and counter
+      # Check file type and determine rename settings
       EXTENSION="${FILE##*.}"
-      NEW_FILENAME="${RENAME_PREFIX}-$(printf "%04d" $RENAME_COUNTER).${EXTENSION}"
-      NEW_FILE_PATH="$INPUT_FOLDER/$NEW_FILENAME"
-
-      # Rename the file
-      if mv "$FILE" "$NEW_FILE_PATH" 2>/dev/null; then
-        echo "🔄 Renamed: $(basename "$FILE") → $NEW_FILENAME"
-        CURRENT_FILE="$NEW_FILE_PATH"
-        ((RENAME_COUNTER++))
+      EXTENSION_LOWER=$(echo "$EXTENSION" | tr '[:upper:]' '[:lower:]')
+      
+      # Determine rename settings based on file type
+      if [[ "$EXTENSION_LOWER" == "mp4" && "$VIDEO_RENAME" == "1" ]]; then
+        NEW_FILENAME="${VIDEO_RENAME_PREFIX}-$(printf "%04d" $VIDEO_RENAME_COUNTER).${EXTENSION}"
+        SHOULD_RENAME=true
+        COUNTER_VAR="VIDEO_RENAME_COUNTER"
+      elif [[ "$EXTENSION_LOWER" =~ ^(jpg|jpeg|png)$ && "$IMAGE_RENAME" == "1" ]]; then
+        NEW_FILENAME="${IMAGE_RENAME_PREFIX}-$(printf "%04d" $IMAGE_RENAME_COUNTER).${EXTENSION}"
+        SHOULD_RENAME=true
+        COUNTER_VAR="IMAGE_RENAME_COUNTER"
       else
-        echo "⚠️  Failed to rename: $FILE"
+        SHOULD_RENAME=false
+      fi
+
+      # Rename the file if applicable
+      if [[ "$SHOULD_RENAME" == true ]]; then
+        NEW_FILE_PATH="$INPUT_FOLDER/$NEW_FILENAME"
+        if mv "$FILE" "$NEW_FILE_PATH" 2>/dev/null; then
+          echo "🔄 Renamed: $(basename "$FILE") → $NEW_FILENAME"
+          CURRENT_FILE="$NEW_FILE_PATH"
+          if [[ "$COUNTER_VAR" == "VIDEO_RENAME_COUNTER" ]]; then
+            ((VIDEO_RENAME_COUNTER++))
+          else
+            ((IMAGE_RENAME_COUNTER++))
+          fi
+        else
+          echo "⚠️  Failed to rename: $FILE"
+          CURRENT_FILE="$FILE"
+        fi
+      else
         CURRENT_FILE="$FILE"
       fi
 
       # Process the file (renamed or original)
       BASENAME=$(basename "$CURRENT_FILE" | sed 's/\.[^.]*$//')
       EXTENSION="${CURRENT_FILE##*.}"
-      OUTPUT="$OUTPUT_FOLDER/${BASENAME}.jpg"
+      EXTENSION_LOWER=$(echo "$EXTENSION" | tr '[:upper:]' '[:lower:]')
+      
+      # Determine if this is a video or image
+      if [[ "$ENABLE_VIDEO_PROCESSING" == "1" && "$EXTENSION_LOWER" == "mp4" ]]; then
+        OUTPUT="$OUTPUT_FOLDER/${BASENAME}.mp4"
+      else
+        OUTPUT="$OUTPUT_FOLDER/${BASENAME}.jpg"
+      fi
+      
       DEST_MOVED="$MOVED_FOLDER/${BASENAME}.${EXTENSION}"
 
       if [ -f "$OUTPUT" ]; then
@@ -157,8 +329,14 @@ while true; do
         continue
       fi
 
-      echo "🖼️  Processing $CURRENT_FILE → $OUTPUT"
-      place_image "$CURRENT_FILE" "$OUTPUT"
+      # Process based on file type
+      if [[ "$ENABLE_VIDEO_PROCESSING" == "1" && "$EXTENSION_LOWER" == "mp4" ]]; then
+        echo "🎬 Processing video $CURRENT_FILE → $OUTPUT"
+        process_video "$CURRENT_FILE" "$OUTPUT"
+      else
+        echo "🖼️  Processing image $CURRENT_FILE → $OUTPUT"
+        place_image "$CURRENT_FILE" "$OUTPUT"
+      fi
 
       if [ $? -eq 0 ]; then
         mv "$CURRENT_FILE" "$DEST_MOVED"
@@ -182,15 +360,30 @@ while true; do
     rm -f "$TEMP_FILE_LIST"
   else
     # Original processing without renaming
-    find "$INPUT_FOLDER" -type f \( \
-      -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \
-      -o -iname "*.JPG" -o -iname "*.JPEG" -o -iname "*.PNG" \
-    \) | while IFS= read -r FILE; do
+    # Build find pattern based on enabled features
+    FIND_PATTERN="-type f \("
+    FIND_PATTERN="$FIND_PATTERN -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png'"
+    FIND_PATTERN="$FIND_PATTERN -o -iname '*.JPG' -o -iname '*.JPEG' -o -iname '*.PNG'"
+    
+    if [[ "$ENABLE_VIDEO_PROCESSING" == "1" ]]; then
+      FIND_PATTERN="$FIND_PATTERN -o -iname '*.mp4' -o -iname '*.MP4'"
+    fi
+    FIND_PATTERN="$FIND_PATTERN \)"
+    
+    eval "find '$INPUT_FOLDER' $FIND_PATTERN" | while IFS= read -r FILE; do
       CURRENT_FILE="$FILE"
 
       BASENAME=$(basename "$CURRENT_FILE" | sed 's/\.[^.]*$//')
       EXTENSION="${CURRENT_FILE##*.}"
-      OUTPUT="$OUTPUT_FOLDER/${BASENAME}.jpg"
+      EXTENSION_LOWER=$(echo "$EXTENSION" | tr '[:upper:]' '[:lower:]')
+      
+      # Determine if this is a video or image
+      if [[ "$ENABLE_VIDEO_PROCESSING" == "1" && "$EXTENSION_LOWER" == "mp4" ]]; then
+        OUTPUT="$OUTPUT_FOLDER/${BASENAME}.mp4"
+      else
+        OUTPUT="$OUTPUT_FOLDER/${BASENAME}.jpg"
+      fi
+      
       DEST_MOVED="$MOVED_FOLDER/${BASENAME}.${EXTENSION}"
 
       if [ -f "$OUTPUT" ]; then
@@ -200,8 +393,14 @@ while true; do
         continue
       fi
 
-      echo "🖼️  Processing $CURRENT_FILE → $OUTPUT"
-      place_image "$CURRENT_FILE" "$OUTPUT"
+      # Process based on file type
+      if [[ "$ENABLE_VIDEO_PROCESSING" == "1" && "$EXTENSION_LOWER" == "mp4" ]]; then
+        echo "🎬 Processing video $CURRENT_FILE → $OUTPUT"
+        process_video "$CURRENT_FILE" "$OUTPUT"
+      else
+        echo "🖼️  Processing image $CURRENT_FILE → $OUTPUT"
+        place_image "$CURRENT_FILE" "$OUTPUT"
+      fi
 
       if [ $? -eq 0 ]; then
         mv "$CURRENT_FILE" "$DEST_MOVED"
