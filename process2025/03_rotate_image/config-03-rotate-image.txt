@@ -1,0 +1,9 @@
+# === Config for Image Rotation ===
+
+# Paths are relative to the script's location
+#SRC_DIR="tempDisplay"
+#DEST_DIR="output"
+#MOVED_DIR="moved"
+
+# How often to check for new files 
+#POLL_INTERVAL=5

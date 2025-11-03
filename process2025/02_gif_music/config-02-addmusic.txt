@@ -1,0 +1,11 @@
+# === Config for Add Music Tool ===
+
+# The music track to overlay (path is relative to the script)
+MUSIC_FILE="./bg_music/background_music.mp3"
+
+# How many seconds to wait between checking for new files
+POLL_INTERVAL=5
+
+# The full ffmpeg command to execute.
+# The script will substitute the variables when it runs.
+COMMAND='ffmpeg -y -loglevel error -i "$input_file" -i "$MUSIC_FILE" -c:v copy -c:a aac -map 0:v:0 -map 1:a:0 "$output_file"'
