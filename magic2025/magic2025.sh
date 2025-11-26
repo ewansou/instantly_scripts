@@ -4,7 +4,6 @@
 INPUT_FOLDER="./Source"
 OUTPUT_FOLDER="./Output"
 MOVED_FOLDER="./Moved"
-BACKGROUND="./background.jpg"
 OVERLAY="./overlay.png"
 CHECK_INTERVAL_SECONDS=3
 CONFIG_FILE="./placement_config.txt"
@@ -61,10 +60,16 @@ echo "🔍 Debug: ENABLE_MOVE_TO_DISPLAY='$ENABLE_MOVE_TO_DISPLAY'"
 : "${VIDEO_INCLUDE_INPUT_AUDIO:=false}"
 : "${IMAGE_OVERLAY_FILENAME:=$OVERLAY}"
 : "${VIDEO_OVERLAY_FILENAME:=$OVERLAY}"
+: "${IMAGE_ROTATION:=0}"
+: "${VIDEO_ROTATION:=0}"
+: "${IMAGE_BACKGROUND_FILENAME:=}"
+: "${VIDEO_BACKGROUND_FILENAME:=}"
 
 # Add ./ prefix if not already present
 [[ "$IMAGE_OVERLAY_FILENAME" != /* && "$IMAGE_OVERLAY_FILENAME" != ./* ]] && IMAGE_OVERLAY_FILENAME="./$IMAGE_OVERLAY_FILENAME"
 [[ "$VIDEO_OVERLAY_FILENAME" != /* && "$VIDEO_OVERLAY_FILENAME" != ./* ]] && VIDEO_OVERLAY_FILENAME="./$VIDEO_OVERLAY_FILENAME"
+[[ -n "$IMAGE_BACKGROUND_FILENAME" && "$IMAGE_BACKGROUND_FILENAME" != /* && "$IMAGE_BACKGROUND_FILENAME" != ./* ]] && IMAGE_BACKGROUND_FILENAME="./$IMAGE_BACKGROUND_FILENAME"
+[[ -n "$VIDEO_BACKGROUND_FILENAME" && "$VIDEO_BACKGROUND_FILENAME" != /* && "$VIDEO_BACKGROUND_FILENAME" != ./* ]] && VIDEO_BACKGROUND_FILENAME="./$VIDEO_BACKGROUND_FILENAME"
 
 # === PLACEMENT CONFIG VALIDATION ===
 if [[ -z "$PLACEMENT_COUNT" ]]; then
@@ -91,6 +96,20 @@ if [[ "$ENABLE_VIDEO_PROCESSING" == "true" ]]; then
   fi
 fi
 
+# === ROTATION CONFIG VALIDATION ===
+# Valid rotation values: 0, 90, 180, 270
+validate_rotation() {
+  local rotation="$1"
+  local type="$2"
+  if [[ ! "$rotation" =~ ^(0|90|180|270)$ ]]; then
+    echo "❌ Invalid ${type}_ROTATION value: $rotation. Must be 0, 90, 180, or 270"
+    exit 1
+  fi
+}
+
+validate_rotation "$IMAGE_ROTATION" "IMAGE"
+validate_rotation "$VIDEO_ROTATION" "VIDEO"
+
 for (( i=1; i<=PLACEMENT_COUNT; i++ )); do
   for var in WIDTH HEIGHT X Y; do
     value=$(eval echo "\$${var}${i}")
@@ -112,20 +131,7 @@ else
   [ -f "$IMAGE_OVERLAY_FILENAME" ] || { echo "❌ Image overlay '$IMAGE_OVERLAY_FILENAME' not found."; exit 1; }
 fi
 
-# Check if background exists, if not we'll create a blank canvas
-USE_BLANK_CANVAS=false
-if [ ! -f "$BACKGROUND" ]; then
-  echo "⚠️  Background image '$BACKGROUND' not found."
-  echo "🎨 Creating blank canvas based on overlay dimensions..."
-  USE_BLANK_CANVAS=true
-  
-  # Get overlay dimensions and color mode (using image overlay as reference)
-  OVERLAY_INFO=$(magick identify -format "%wx%h %[colorspace]" "$IMAGE_OVERLAY_FILENAME")
-  OVERLAY_DIMENSIONS=$(echo "$OVERLAY_INFO" | cut -d' ' -f1)
-  OVERLAY_COLORSPACE=$(echo "$OVERLAY_INFO" | cut -d' ' -f2)
-  
-  echo "📏 Overlay dimensions: $OVERLAY_DIMENSIONS, Colorspace: $OVERLAY_COLORSPACE"
-fi
+# We'll check backgrounds later when processing files
 
 # === FOLDER SETUP ===
 mkdir -p "$INPUT_FOLDER" "$OUTPUT_FOLDER" "$MOVED_FOLDER"
@@ -137,15 +143,28 @@ place_image() {
 
   local cmd=()
   
+  # Check if image background exists, if not we'll create a blank canvas
+  local USE_IMAGE_BLANK_CANVAS=false
+  local IMAGE_OVERLAY_INFO IMAGE_OVERLAY_DIMENSIONS IMAGE_OVERLAY_COLORSPACE
+  
+  if [ ! -f "$IMAGE_BACKGROUND_FILENAME" ] || [ -z "$IMAGE_BACKGROUND_FILENAME" ]; then
+    USE_IMAGE_BLANK_CANVAS=true
+    # Get overlay dimensions and color mode
+    IMAGE_OVERLAY_INFO=$(magick identify -format "%wx%h %[colorspace]" "$IMAGE_OVERLAY_FILENAME")
+    IMAGE_OVERLAY_DIMENSIONS=$(echo "$IMAGE_OVERLAY_INFO" | cut -d' ' -f1)
+    IMAGE_OVERLAY_COLORSPACE=$(echo "$IMAGE_OVERLAY_INFO" | cut -d' ' -f2)
+    echo "🎨 Using blank canvas (${IMAGE_OVERLAY_DIMENSIONS}) for image processing"
+  fi
+  
   # Start with either background image or blank canvas
-  if [ "$USE_BLANK_CANVAS" = true ]; then
-    cmd=(magick -size "$OVERLAY_DIMENSIONS" xc:white)
+  if [ "$USE_IMAGE_BLANK_CANVAS" = true ]; then
+    cmd=(magick -size "$IMAGE_OVERLAY_DIMENSIONS" xc:white)
     # Convert to same colorspace as overlay
-    if [[ "$OVERLAY_COLORSPACE" == "sRGB" ]]; then
+    if [[ "$IMAGE_OVERLAY_COLORSPACE" == "sRGB" ]]; then
       cmd+=(-colorspace sRGB)
     fi
   else
-    cmd=(magick "$BACKGROUND")
+    cmd=(magick "$IMAGE_BACKGROUND_FILENAME")
   fi
 
   for (( i=1; i<=PLACEMENT_COUNT; i++ )); do
@@ -156,8 +175,14 @@ place_image() {
 
     echo "🔧 Placing image at slot $i: ${WIDTH}x${HEIGHT} at +${X}+${Y}"
 
+    # Apply rotation if needed
+    local rotate_opts=""
+    if [[ "$IMAGE_ROTATION" != "0" ]]; then
+      rotate_opts="-rotate $IMAGE_ROTATION"
+    fi
+    
     cmd+=(
-      \( "$input_image" -auto-orient -resize "${WIDTH}x${HEIGHT}" \
+      \( "$input_image" -auto-orient $rotate_opts -resize "${WIDTH}x${HEIGHT}" \
       -gravity center -background none -extent "${WIDTH}x${HEIGHT}" \)
       -gravity NorthWest -geometry "+${X}+${Y}" -composite
     )
@@ -191,9 +216,27 @@ process_video() {
   # Ensure cleanup on exit
   trap "rm -f '$temp_resized' '$temp_on_bg'" EXIT
   
+  # Check if video background exists
+  local USE_VIDEO_BLANK_CANVAS=false
+  if [ ! -f "$VIDEO_BACKGROUND_FILENAME" ] || [ -z "$VIDEO_BACKGROUND_FILENAME" ]; then
+    USE_VIDEO_BLANK_CANVAS=true
+    echo "🎨 Using blank canvas (${VIDEO_OVERLAY_DIMENSIONS}) for video processing"
+  fi
+  
   echo "🎬 Step 1/3: Resizing video to ${VIDEO_WIDTH}x${VIDEO_HEIGHT}..."
-  # Resize the video
-  if ! ffmpeg -i "$input_video" -filter:v "scale=${VIDEO_WIDTH}:${VIDEO_HEIGHT}" -preset ultrafast -y "$temp_resized" 2>&1 | grep -E "(error|Error)" >&2; then
+  # Build filter string with rotation if needed
+  local video_filter="scale=${VIDEO_WIDTH}:${VIDEO_HEIGHT}"
+  if [[ "$VIDEO_ROTATION" != "0" ]]; then
+    echo "   Applying rotation: ${VIDEO_ROTATION}°"
+    case "$VIDEO_ROTATION" in
+      90)  video_filter="${video_filter},transpose=1" ;;  # 90 clockwise
+      180) video_filter="${video_filter},transpose=1,transpose=1" ;;  # 180
+      270) video_filter="${video_filter},transpose=2" ;;  # 270 clockwise (90 counter-clockwise)
+    esac
+  fi
+  
+  # Resize and rotate the video
+  if ! ffmpeg -i "$input_video" -filter:v "$video_filter" -preset ultrafast -y "$temp_resized" 2>&1 | grep -E "(error|Error)" >&2; then
     :
   fi
   
@@ -205,11 +248,10 @@ process_video() {
   
   echo "🎬 Step 2/3: Placing video on background at position +${VIDEO_X}+${VIDEO_Y}..."
   # Place resized video on background
-  if [ "$USE_BLANK_CANVAS" = true ]; then
+  if [ "$USE_VIDEO_BLANK_CANVAS" = true ]; then
     # Create blank canvas and place video
-    echo "   Using blank canvas with dimensions: ${VIDEO_OVERLAY_DIMENSIONS}"
     if ! ffmpeg -f lavfi -i "color=c=white:s=${VIDEO_OVERLAY_DIMENSIONS}" -i "$temp_resized" \
-      -filter_complex "[1]scale=${VIDEO_WIDTH}:${VIDEO_HEIGHT}[vid]; [0][vid]overlay=${VIDEO_X}:${VIDEO_Y}:shortest=1[out]" \
+      -filter_complex "[0][1]overlay=${VIDEO_X}:${VIDEO_Y}:shortest=1[out]" \
       -map "[out]" -preset ultrafast -y "$temp_on_bg" 2>&1 | grep -E "(error|Error)" >&2; then
       :
     fi
@@ -224,8 +266,8 @@ process_video() {
     fi
   else
     # Use existing background
-    if ! ffmpeg -loop 1 -i "$BACKGROUND" -i "$temp_resized" \
-      -filter_complex "[1]scale=${VIDEO_WIDTH}:${VIDEO_HEIGHT}[vid]; [0][vid]overlay=${VIDEO_X}:${VIDEO_Y}:shortest=1[out]" \
+    if ! ffmpeg -loop 1 -i "$VIDEO_BACKGROUND_FILENAME" -i "$temp_resized" \
+      -filter_complex "[0][1]overlay=${VIDEO_X}:${VIDEO_Y}:shortest=1[out]" \
       -map "[out]" -preset ultrafast -y "$temp_on_bg" 2>&1 | grep -E "(error|Error)" >&2; then
       :
     fi
@@ -241,11 +283,11 @@ process_video() {
   # Add overlay on top and handle audio
   local audio_opts=""
   if [[ "$VIDEO_INCLUDE_INPUT_AUDIO" == "true" ]]; then
-    audio_opts="-map 1:a? -c:a copy"
+    audio_opts="-map 0:a? -c:a copy"
   fi
   
-  if ! ffmpeg -loop 1 -i "$VIDEO_OVERLAY_FILENAME" -i "$temp_on_bg" \
-    -filter_complex "[1]scale=${VIDEO_OVERLAY_DIMENSIONS}[vid]; [vid][0]overlay=0:0:shortest=1[out]" \
+  if ! ffmpeg -i "$temp_on_bg" -loop 1 -i "$VIDEO_OVERLAY_FILENAME" \
+    -filter_complex "[0:v][1:v]overlay=0:0:shortest=1[out]" \
     -map "[out]" $audio_opts -preset ultrafast -y "$output_video" 2>&1 | grep -E "(error|Error)" >&2; then
     :
   fi
@@ -267,10 +309,17 @@ process_video() {
 echo "📂 Watching Source folder at: $(realpath "$INPUT_FOLDER")"
 echo "⏳ Monitoring $INPUT_FOLDER every $CHECK_INTERVAL_SECONDS seconds..."
 
+if [[ "$IMAGE_ROTATION" != "0" ]]; then
+  echo "🔄 Image rotation enabled: ${IMAGE_ROTATION}°"
+fi
+
 if [[ "$ENABLE_VIDEO_PROCESSING" == "true" ]]; then
   echo "🎬 Video processing enabled (MP4 files)"
   echo "   Video size: ${VIDEO_WIDTH}x${VIDEO_HEIGHT} at position +${VIDEO_X}+${VIDEO_Y}"
   echo "   Audio: $([[ "$VIDEO_INCLUDE_INPUT_AUDIO" == "true" ]] && echo "Preserved" || echo "Removed")"
+  if [[ "$VIDEO_ROTATION" != "0" ]]; then
+    echo "   Video rotation: ${VIDEO_ROTATION}°"
+  fi
 fi
 
 # Initialize rename counters
