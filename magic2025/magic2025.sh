@@ -64,6 +64,14 @@ echo "🔍 Debug: ENABLE_MOVE_TO_DISPLAY='$ENABLE_MOVE_TO_DISPLAY'"
 : "${VIDEO_ROTATION:=0}"
 : "${IMAGE_BACKGROUND_FILENAME:=}"
 : "${VIDEO_BACKGROUND_FILENAME:=}"
+: "${IMAGE_CROP_WIDTH:=}"
+: "${IMAGE_CROP_HEIGHT:=}"
+: "${IMAGE_CROP_X:=0}"
+: "${IMAGE_CROP_Y:=0}"
+: "${VIDEO_CROP_WIDTH:=}"
+: "${VIDEO_CROP_HEIGHT:=}"
+: "${VIDEO_CROP_X:=0}"
+: "${VIDEO_CROP_Y:=0}"
 
 # Add ./ prefix if not already present
 [[ "$IMAGE_OVERLAY_FILENAME" != /* && "$IMAGE_OVERLAY_FILENAME" != ./* ]] && IMAGE_OVERLAY_FILENAME="./$IMAGE_OVERLAY_FILENAME"
@@ -109,6 +117,41 @@ validate_rotation() {
 
 validate_rotation "$IMAGE_ROTATION" "IMAGE"
 validate_rotation "$VIDEO_ROTATION" "VIDEO"
+
+# === CROP CONFIG VALIDATION ===
+# Check if cropping is enabled (both width and height must be specified)
+if [[ -n "$IMAGE_CROP_WIDTH" && -n "$IMAGE_CROP_HEIGHT" ]]; then
+  # Validate crop dimensions are positive integers
+  if [[ ! "$IMAGE_CROP_WIDTH" =~ ^[1-9][0-9]*$ ]] || [[ ! "$IMAGE_CROP_HEIGHT" =~ ^[1-9][0-9]*$ ]]; then
+    echo "❌ IMAGE_CROP_WIDTH and IMAGE_CROP_HEIGHT must be positive integers"
+    exit 1
+  fi
+  # Validate crop position (can be 0 or positive)
+  if [[ ! "$IMAGE_CROP_X" =~ ^[0-9]+$ ]] || [[ ! "$IMAGE_CROP_Y" =~ ^[0-9]+$ ]]; then
+    echo "❌ IMAGE_CROP_X and IMAGE_CROP_Y must be non-negative integers"
+    exit 1
+  fi
+elif [[ -n "$IMAGE_CROP_WIDTH" || -n "$IMAGE_CROP_HEIGHT" ]]; then
+  echo "❌ Both IMAGE_CROP_WIDTH and IMAGE_CROP_HEIGHT must be specified for cropping"
+  exit 1
+fi
+
+# Video crop validation
+if [[ -n "$VIDEO_CROP_WIDTH" && -n "$VIDEO_CROP_HEIGHT" ]]; then
+  # Validate crop dimensions are positive integers
+  if [[ ! "$VIDEO_CROP_WIDTH" =~ ^[1-9][0-9]*$ ]] || [[ ! "$VIDEO_CROP_HEIGHT" =~ ^[1-9][0-9]*$ ]]; then
+    echo "❌ VIDEO_CROP_WIDTH and VIDEO_CROP_HEIGHT must be positive integers"
+    exit 1
+  fi
+  # Validate crop position (can be 0 or positive)
+  if [[ ! "$VIDEO_CROP_X" =~ ^[0-9]+$ ]] || [[ ! "$VIDEO_CROP_Y" =~ ^[0-9]+$ ]]; then
+    echo "❌ VIDEO_CROP_X and VIDEO_CROP_Y must be non-negative integers"
+    exit 1
+  fi
+elif [[ -n "$VIDEO_CROP_WIDTH" || -n "$VIDEO_CROP_HEIGHT" ]]; then
+  echo "❌ Both VIDEO_CROP_WIDTH and VIDEO_CROP_HEIGHT must be specified for video cropping"
+  exit 1
+fi
 
 for (( i=1; i<=PLACEMENT_COUNT; i++ )); do
   for var in WIDTH HEIGHT X Y; do
@@ -175,14 +218,24 @@ place_image() {
 
     echo "🔧 Placing image at slot $i: ${WIDTH}x${HEIGHT} at +${X}+${Y}"
 
-    # Apply rotation if needed
-    local rotate_opts=""
+    # Build image processing options
+    local image_processing_opts="-auto-orient"
+    
+    # Apply cropping if enabled (before rotation)
+    if [[ -n "$IMAGE_CROP_WIDTH" && -n "$IMAGE_CROP_HEIGHT" ]]; then
+      image_processing_opts="$image_processing_opts -crop ${IMAGE_CROP_WIDTH}x${IMAGE_CROP_HEIGHT}+${IMAGE_CROP_X}+${IMAGE_CROP_Y}"
+      if [[ $i -eq 1 ]]; then  # Only log once, not for each placement
+        echo "   ✂️  After cropping: ${IMAGE_CROP_WIDTH}x${IMAGE_CROP_HEIGHT}"
+      fi
+    fi
+    
+    # Apply rotation if needed (after cropping)
     if [[ "$IMAGE_ROTATION" != "0" ]]; then
-      rotate_opts="-rotate $IMAGE_ROTATION"
+      image_processing_opts="$image_processing_opts -rotate $IMAGE_ROTATION"
     fi
     
     cmd+=(
-      \( "$input_image" -auto-orient $rotate_opts -resize "${WIDTH}x${HEIGHT}" \
+      \( "$input_image" $image_processing_opts -resize "${WIDTH}x${HEIGHT}" \
       -gravity center -background none -extent "${WIDTH}x${HEIGHT}" \)
       -gravity NorthWest -geometry "+${X}+${Y}" -composite
     )
@@ -223,17 +276,32 @@ process_video() {
     echo "🎨 Using blank canvas (${VIDEO_OVERLAY_DIMENSIONS}) for video processing"
   fi
   
-  echo "🎬 Step 1/3: Resizing video to ${VIDEO_WIDTH}x${VIDEO_HEIGHT}..."
-  # Build filter string with rotation if needed
-  local video_filter="scale=${VIDEO_WIDTH}:${VIDEO_HEIGHT}"
-  if [[ "$VIDEO_ROTATION" != "0" ]]; then
-    echo "   Applying rotation: ${VIDEO_ROTATION}°"
-    case "$VIDEO_ROTATION" in
-      90)  video_filter="${video_filter},transpose=1" ;;  # 90 clockwise
-      180) video_filter="${video_filter},transpose=1,transpose=1" ;;  # 180
-      270) video_filter="${video_filter},transpose=2" ;;  # 270 clockwise (90 counter-clockwise)
-    esac
+  echo "🎬 Step 1/3: Processing video..."
+  # Build filter string with cropping, rotation, and scaling
+  local video_filter=""
+  
+  # Apply cropping if enabled (before rotation)
+  if [[ -n "$VIDEO_CROP_WIDTH" && -n "$VIDEO_CROP_HEIGHT" ]]; then
+    video_filter="crop=${VIDEO_CROP_WIDTH}:${VIDEO_CROP_HEIGHT}:${VIDEO_CROP_X}:${VIDEO_CROP_Y}"
+    echo "   ✂️  Cropping to: ${VIDEO_CROP_WIDTH}x${VIDEO_CROP_HEIGHT} at +${VIDEO_CROP_X}+${VIDEO_CROP_Y}"
+    echo "   ✂️  After cropping: ${VIDEO_CROP_WIDTH}x${VIDEO_CROP_HEIGHT}"
   fi
+  
+  # Apply rotation if needed (after cropping)
+  if [[ "$VIDEO_ROTATION" != "0" ]]; then
+    echo "   🔄 Applying rotation: ${VIDEO_ROTATION}°"
+    local rotate_filter=""
+    case "$VIDEO_ROTATION" in
+      90)  rotate_filter="transpose=1" ;;  # 90 clockwise
+      180) rotate_filter="transpose=1,transpose=1" ;;  # 180
+      270) rotate_filter="transpose=2" ;;  # 270 clockwise (90 counter-clockwise)
+    esac
+    video_filter="${video_filter:+${video_filter},}${rotate_filter}"
+  fi
+  
+  # Add scaling
+  echo "   📐 Scaling to: ${VIDEO_WIDTH}x${VIDEO_HEIGHT}"
+  video_filter="${video_filter:+${video_filter},}scale=${VIDEO_WIDTH}:${VIDEO_HEIGHT}"
   
   # Resize and rotate the video
   if ! ffmpeg -i "$input_video" -filter:v "$video_filter" -preset ultrafast -y "$temp_resized" 2>&1 | grep -E "(error|Error)" >&2; then
@@ -313,12 +381,19 @@ if [[ "$IMAGE_ROTATION" != "0" ]]; then
   echo "🔄 Image rotation enabled: ${IMAGE_ROTATION}°"
 fi
 
+if [[ -n "$IMAGE_CROP_WIDTH" && -n "$IMAGE_CROP_HEIGHT" ]]; then
+  echo "✂️  Image cropping enabled: ${IMAGE_CROP_WIDTH}x${IMAGE_CROP_HEIGHT} at +${IMAGE_CROP_X}+${IMAGE_CROP_Y}"
+fi
+
 if [[ "$ENABLE_VIDEO_PROCESSING" == "true" ]]; then
   echo "🎬 Video processing enabled (MP4 files)"
   echo "   Video size: ${VIDEO_WIDTH}x${VIDEO_HEIGHT} at position +${VIDEO_X}+${VIDEO_Y}"
   echo "   Audio: $([[ "$VIDEO_INCLUDE_INPUT_AUDIO" == "true" ]] && echo "Preserved" || echo "Removed")"
   if [[ "$VIDEO_ROTATION" != "0" ]]; then
     echo "   Video rotation: ${VIDEO_ROTATION}°"
+  fi
+  if [[ -n "$VIDEO_CROP_WIDTH" && -n "$VIDEO_CROP_HEIGHT" ]]; then
+    echo "   Video cropping: ${VIDEO_CROP_WIDTH}x${VIDEO_CROP_HEIGHT} at +${VIDEO_CROP_X}+${VIDEO_CROP_Y}"
   fi
 fi
 
