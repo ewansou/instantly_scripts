@@ -1,0 +1,294 @@
+# XML Automator Configuration - Multi-Group Support
+# Groups are automatically detected using numeric format: 01, 02, 03, etc.
+
+
+# ================================================================
+# GROUP 01
+# ================================================================
+01_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+01_NEW_XML_NAME=02-Male-settings.xml
+01_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver
+
+01_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+01_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/replicate/single/01-silver_02-M-1pax
+
+# ================================================================
+# GROUP 02
+# ================================================================
+02_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+02_NEW_XML_NAME=03-Mix-settings.xml
+02_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver
+
+02_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+02_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/akool/group/01-silver_03-MF-2pax
+
+# ================================================================
+# GROUP 03
+# ================================================================
+03_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+03_NEW_XML_NAME=04-MaleMale-settings.xml
+03_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver
+
+03_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+03_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/akool/group/01-silver_04-MM-2pax
+
+# ================================================================
+# GROUP 04
+# ================================================================
+04_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+04_NEW_XML_NAME=05-FemaleFemale-settings.xml
+04_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver
+
+04_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+04_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/akool/group/01-silver_05-FF-2pax
+
+# ================================================================
+# GROUP 05
+# ================================================================
+05_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+05_NEW_XML_NAME=01-Female-settings.xml
+05_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/02-green
+
+05_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+05_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/replicate/single/02-green_01-F-1pax
+
+# ================================================================
+# GROUP 06
+# ================================================================
+06_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+06_NEW_XML_NAME=02-Male-settings.xml
+06_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/02-green
+
+06_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+06_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/replicate/single/02-green_02-M-1pax
+
+# ================================================================
+# GROUP 07
+# ================================================================
+07_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+07_NEW_XML_NAME=03-Mix-settings.xml
+07_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/02-green
+
+07_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+07_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/akool/group/02-green_03-FM-2pax
+
+# ================================================================
+# GROUP 08
+# ================================================================
+08_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+08_NEW_XML_NAME=04-MaleMale-settings.xml
+08_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/02-green
+
+08_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+08_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/akool/group/02-green_04-MM-2pax
+
+# ================================================================
+# GROUP 09
+# ================================================================
+09_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+09_NEW_XML_NAME=05-FemaleFemale-settings.xml
+09_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/02-green
+
+09_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+09_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/akool/group/02-green_05-FF-2pax
+
+# ================================================================
+# GROUP 10
+# ================================================================
+10_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+10_NEW_XML_NAME=01-Female-settings.xml
+10_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/03-astronaut
+
+10_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+10_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/replicate/single/03-astronaut_01-F-1pax
+
+# ================================================================
+# GROUP 11
+# ================================================================
+11_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+11_NEW_XML_NAME=02-Male-settings.xml
+11_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/03-astronaut
+
+11_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+11_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/replicate/single/03-astronaut_02-M-1pax
+
+# ================================================================
+# GROUP 12
+# ================================================================
+12_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+12_NEW_XML_NAME=03-Mix-settings.xml
+12_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/03-astronaut
+
+12_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+12_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/akool/group/03-astronaut_03-MF-2pax
+
+# ================================================================
+# GROUP 13
+# ================================================================
+13_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+13_NEW_XML_NAME=04-MaleMale-settings.xml
+13_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/03-astronaut
+
+13_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+13_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/akool/group/03-astronaut_04-MM-2pax
+
+# ================================================================
+# GROUP 14
+# ================================================================
+14_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+14_NEW_XML_NAME=05-FemaleFemale-settings.xml
+14_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/03-astronaut
+
+14_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+14_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/akool/group/03-astronaut_05-FF-2pax
+
+# ================================================================
+# GROUP 15
+# ================================================================
+15_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+15_NEW_XML_NAME=01-Female-settings.xml
+15_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/04-purple
+
+15_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+15_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/replicate/single/04-purple_01-F-1pax
+
+# ================================================================
+# GROUP 16
+# ================================================================
+16_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+16_NEW_XML_NAME=02-Male-settings.xml
+16_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/04-purple
+
+16_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+16_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/replicate/single/04-purple_02-M-1pax
+
+# ================================================================
+# GROUP 17
+# ================================================================
+17_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+17_NEW_XML_NAME=03-Mix-settings.xml
+17_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/04-purple
+
+17_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+17_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/akool/group/04-purple_03-MF-2pax
+
+# ================================================================
+# GROUP 18
+# ================================================================
+18_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+18_NEW_XML_NAME=04-MaleMale-settings.xml
+18_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/04-purple
+
+18_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+18_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/akool/group/04-purple_04-MM-2pax
+
+# ================================================================
+# GROUP 19
+# ================================================================
+19_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+19_NEW_XML_NAME=05-FemaleFemale-settings.xml
+19_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/04-purple
+
+19_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+19_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/akool/group/04-purple_05-FF-2pax
+
+# ================================================================
+# GROUP 20
+# ================================================================
+20_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+20_NEW_XML_NAME=01-Female-settings.xml
+20_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/05-scifi
+
+20_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+20_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/replicate/single/05-scifi_01-F-1pax
+
+# ================================================================
+# GROUP 21
+# ================================================================
+21_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+21_NEW_XML_NAME=02-Male-settings.xml
+21_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/05-scifi
+
+21_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+21_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/replicate/single/05-scifi_02-M-1pax
+
+# ================================================================
+# GROUP 22
+# ================================================================
+22_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+22_NEW_XML_NAME=03-Mix-settings.xml
+22_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/05-scifi
+
+22_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+22_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/akool/group/05-scifi_03-MF-2pax
+
+# ================================================================
+# GROUP 23
+# ================================================================
+23_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+23_NEW_XML_NAME=04-MaleMale-settings.xml
+23_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/05-scifi
+
+23_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+23_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/akool/group/05-scifi_04-MM-2pax
+
+# ================================================================
+# GROUP 24
+# ================================================================
+24_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+24_NEW_XML_NAME=05-FemaleFemale-settings.xml
+24_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/05-scifi
+
+24_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+24_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/akool/group/05-scifi_05-FF-2pax
+
+# ================================================================
+# GROUP 25
+# ================================================================
+25_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+25_NEW_XML_NAME=01-Female-settings.xml
+25_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/06-ares
+
+25_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+25_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/replicate/single/06-ares_01-F-1pax
+
+# ================================================================
+# GROUP 26
+# ================================================================
+26_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+26_NEW_XML_NAME=02-Male-settings.xml
+26_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/06-ares
+
+26_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+26_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/replicate/single/06-ares_02-M-1pax
+
+# ================================================================
+# GROUP 27
+# ================================================================
+27_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+27_NEW_XML_NAME=03-Mix-settings.xml
+27_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/06-ares
+
+27_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+27_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/akool/group/06-ares_03-FM-2pax
+
+# ================================================================
+# GROUP 28
+# ================================================================
+28_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+28_NEW_XML_NAME=04-MaleMale-settings.xml
+28_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/06-ares
+
+28_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+28_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/akool/group/06-ares_04-MM-2pax
+
+# ================================================================
+# GROUP 29
+# ================================================================
+29_BASE_XML=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/01-silver/01-Female-settings.xml
+29_NEW_XML_NAME=05-FemaleFemale-settings.xml
+29_NEW_XML_OUTPUT_DIR=/Users/ewansou/Dropbox/Project_Instantly/Operations/thisweek/INTELPC5/EventSettings/eventArtery/eventArtery-white/06-ares
+
+29_XML_PATHS[0]=photobooth_settings/photoPostprocessURL
+29_XML_VALUES[0]=https://server.highlightsfromyourevent.com/instantly-breeze-service/api/faceswap/akool/group/06-ares_05-FF-2pax
+
