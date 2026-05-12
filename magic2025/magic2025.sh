@@ -20,6 +20,17 @@ while IFS='=' read -r key value; do
   fi
 done < "$CONFIG_FILE"
 
+# === TIMESTAMP FUNCTION ===
+get_timestamp() {
+  local ts
+  ts=$(date +"%Y%m%d_%H%M%S%2N" 2>/dev/null)
+  if [[ "$ts" == *"N"* ]]; then
+    date +"%Y%m%d_%H%M%S"
+  else
+    echo "$ts"
+  fi
+}
+
 # === NORMALIZE BOOLEAN VALUES ===
 # Function to normalize boolean values (1/0, true/false) to true/false
 normalize_bool() {
@@ -462,28 +473,24 @@ while true; do
       EXTENSION="${CURRENT_FILE##*.}"
       EXTENSION_LOWER=$(echo "$EXTENSION" | tr '[:upper:]' '[:lower:]')
       
+      # Generate timestamp for output filename
+      TIMESTAMP=$(get_timestamp)
+
       # Determine if this is a video or image
       if [[ "$ENABLE_VIDEO_PROCESSING" == "true" && "$EXTENSION_LOWER" == "mp4" ]]; then
-        OUTPUT="$OUTPUT_FOLDER/${BASENAME}.mp4"
+        OUTPUT="$OUTPUT_FOLDER/${BASENAME}_${TIMESTAMP}.mp4"
       else
-        OUTPUT="$OUTPUT_FOLDER/${BASENAME}.jpg"
+        OUTPUT="$OUTPUT_FOLDER/${BASENAME}_${TIMESTAMP}.jpg"
       fi
-      
+
       DEST_MOVED="$MOVED_FOLDER/${BASENAME}.${EXTENSION}"
 
-      if [ -f "$OUTPUT" ]; then
-        echo "⚠️  Skipping: '$CURRENT_FILE'"
-        echo "   ↪ A file with the same name already exists in '$OUTPUT_FOLDER': $(basename "$OUTPUT")"
-        echo "   🧼 To reprocess it, delete the output file or rename the input."
-        continue
-      fi
+      echo "🖼️  Processing $CURRENT_FILE → $OUTPUT"
 
       # Process based on file type
       if [[ "$ENABLE_VIDEO_PROCESSING" == "true" && "$EXTENSION_LOWER" == "mp4" ]]; then
-        echo "🎬 Processing video $CURRENT_FILE → $OUTPUT"
         process_video "$CURRENT_FILE" "$OUTPUT"
       else
-        echo "🖼️  Processing image $CURRENT_FILE → $OUTPUT"
         # Check if image overlay exists before processing
         if [ ! -f "$IMAGE_OVERLAY_FILENAME" ]; then
           echo "❌ Cannot process image: Image overlay '$IMAGE_OVERLAY_FILENAME' not found"
@@ -532,28 +539,24 @@ while true; do
       EXTENSION="${CURRENT_FILE##*.}"
       EXTENSION_LOWER=$(echo "$EXTENSION" | tr '[:upper:]' '[:lower:]')
       
+      # Generate timestamp for output filename
+      TIMESTAMP=$(get_timestamp)
+
       # Determine if this is a video or image
       if [[ "$ENABLE_VIDEO_PROCESSING" == "true" && "$EXTENSION_LOWER" == "mp4" ]]; then
-        OUTPUT="$OUTPUT_FOLDER/${BASENAME}.mp4"
+        OUTPUT="$OUTPUT_FOLDER/${BASENAME}_${TIMESTAMP}.mp4"
       else
-        OUTPUT="$OUTPUT_FOLDER/${BASENAME}.jpg"
+        OUTPUT="$OUTPUT_FOLDER/${BASENAME}_${TIMESTAMP}.jpg"
       fi
-      
+
       DEST_MOVED="$MOVED_FOLDER/${BASENAME}.${EXTENSION}"
 
-      if [ -f "$OUTPUT" ]; then
-        echo "⚠️  Skipping: '$FILE'"
-        echo "   ↪ A file with the same name already exists in '$OUTPUT_FOLDER': $(basename "$OUTPUT")"
-        echo "   🧼 To reprocess it, delete the output file or rename the input."
-        continue
-      fi
+      echo "🖼️  Processing $CURRENT_FILE → $OUTPUT"
 
       # Process based on file type
       if [[ "$ENABLE_VIDEO_PROCESSING" == "true" && "$EXTENSION_LOWER" == "mp4" ]]; then
-        echo "🎬 Processing video $CURRENT_FILE → $OUTPUT"
         process_video "$CURRENT_FILE" "$OUTPUT"
       else
-        echo "🖼️  Processing image $CURRENT_FILE → $OUTPUT"
         # Check if image overlay exists before processing
         if [ ! -f "$IMAGE_OVERLAY_FILENAME" ]; then
           echo "❌ Cannot process image: Image overlay '$IMAGE_OVERLAY_FILENAME' not found"
